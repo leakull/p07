@@ -1,0 +1,3590 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>СМО — мониторинг оборудования</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ══════════════════════ TOKENS ══════════════════════ */
+/* Machine black: a warm, almost colourless ramp. Signal yellow is the one accent
+   (primary action, selection, the main trend). Red, amber, green and blue only ever
+   mean a machine state, the way the tiers of an andon stack light do. */
+:root {
+  --bg-0:#0e0e0d;
+  --bg-1:#141413;
+  --bg-2:#1a1a18;
+  --bg-3:#232320;
+  --bg-4:#2c2c29;
+  --line:rgba(236,235,230,.08);
+  --line-2:rgba(236,235,230,.13);
+  --row-hover:rgba(236,235,230,.03);
+  --nav-hover:#1c1c1a;
+  --nav-active:#232320;
+  --input-bg:#1f1f1d;
+  --input-line:rgba(236,235,230,.09);
+  --tx-1:#ecebe6;
+  --tx-2:#a6a49c;
+  --tx-3:#8a887f;
+  --accent:#f2c230;
+  --accent-line:#f2c230;
+  --accent-soft:rgba(242,194,48,.16);
+  --chart-area:rgba(242,194,48,.07);
+  --ok:#4cc38a;
+  --ok-dim:rgba(76,195,138,.16);
+  --warn:#f08a24;
+  --warn-dim:rgba(240,138,36,.16);
+  --warn-soft:rgba(240,138,36,.12);
+  --warn-zone:rgba(240,138,36,.42);
+  --crit:#ec4d47;
+  --crit-dim:rgba(236,77,71,.16);
+  --crit-soft:rgba(236,77,71,.12);
+  --crit-zone:rgba(236,77,71,.42);
+  --info:#5f9de0;
+  --info-dim:rgba(95,157,224,.16);
+  --track:rgba(236,235,230,.08);
+  --bar:#5a5953;
+  --btn-bg:#f2c230;
+  --btn-bg-h:#f6d158;
+  --btn-tx:#141413;
+  --toast-bg:#232320;
+  --ov:rgba(8,8,7,.72);
+  --sh-card:none;
+  --sh-float:0 16px 48px rgba(0,0,0,.45);
+  --font-ui:'IBM Plex Sans Condensed','IBM Plex Sans',system-ui,-apple-system,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  --sw:256px;
+  --th:56px;
+  --ease:cubic-bezier(.22,1,.36,1);
+  --t-fast:140ms;
+  --t-menu:200ms;
+  --t-enter:360ms;
+  color-scheme:dark;
+}
+
+/* ══════════════════════ LIGHT THEME ══════════════════════ */
+body.theme-light {
+  --bg-0:#e9e8e3;
+  --bg-1:#f2f1ed;
+  --bg-2:#fbfbf9;
+  --bg-3:#ecebe6;
+  --bg-4:#e2e1db;
+  --line:rgba(25,25,23,.09);
+  --line-2:rgba(25,25,23,.15);
+  --row-hover:rgba(25,25,23,.025);
+  --nav-hover:rgba(25,25,23,.04);
+  --nav-active:#fbfbf9;
+  --input-bg:#fbfbf9;
+  --input-line:rgba(25,25,23,.15);
+  --tx-1:#191917;
+  --tx-2:#55534d;
+  --tx-3:#706e67;
+  --accent:#f2c230;
+  --accent-line:#a67c00;
+  --accent-soft:rgba(242,194,48,.28);
+  --chart-area:rgba(166,124,0,.07);
+  --ok:#17a050;
+  --ok-dim:rgba(23,160,80,.16);
+  --warn:#c25f00;
+  --warn-dim:rgba(194,95,0,.16);
+  --warn-soft:rgba(194,95,0,.08);
+  --warn-zone:rgba(194,95,0,.32);
+  --crit:#d42c26;
+  --crit-dim:rgba(212,44,38,.14);
+  --crit-soft:rgba(212,44,38,.07);
+  --crit-zone:rgba(212,44,38,.3);
+  --info:#2f6fb5;
+  --info-dim:rgba(47,111,181,.14);
+  --track:rgba(25,25,23,.08);
+  --bar:#c2c0b8;
+  --btn-bg:#f2c230;
+  --btn-bg-h:#f6d158;
+  --btn-tx:#191917;
+  --toast-bg:#ffffff;
+  --ov:rgba(23,23,23,.28);
+  --sh-card:0 1px 2px rgba(0,0,0,.04);
+  --sh-float:0 8px 24px rgba(0,0,0,.08);
+  color-scheme:light;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  background:var(--bg-1);
+  color:var(--tx-1);
+  font-family:var(--font-ui);
+  font-size:14px;
+  line-height:20px;
+  min-height:100vh;
+  display:flex;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit}
+h1,h2{font:inherit}
+svg{flex-shrink:0}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--font-mono);font-size:13px;font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid var(--accent-line);outline-offset:2px}
+::selection{background:var(--accent-soft)}
+
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:8px;border:3px solid transparent;background-clip:padding-box}
+
+/* ══════════════════════ SIDEBAR ══════════════════════ */
+#sidebar{
+  width:var(--sw);
+  height:100vh;
+  background:var(--bg-0);
+  border-right:1px solid var(--line);
+  display:flex;
+  flex-direction:column;
+  position:fixed;
+  top:0;left:0;bottom:0;
+  z-index:100;
+  overflow-y:auto;
+}
+
+.brand{
+  height:var(--th);
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:0 20px;
+  border-bottom:1px solid var(--line);
+}
+.brand-mark{width:24px;height:24px;color:var(--accent-line)}
+.brand-txt{min-width:0}
+.brand-name{font-size:16px;line-height:20px;font-weight:600;letter-spacing:.02em}
+.brand-sub{font-size:12px;line-height:16px;color:var(--tx-3);white-space:nowrap}
+
+/* Simulator */
+.sim-box{
+  margin:16px 12px 0;
+  padding:12px;
+  background:var(--bg-2);
+  border:1px solid var(--line);
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.sdot{width:8px;height:8px;border-radius:50%;background:var(--ok);flex-shrink:0;transition:background-color var(--t-fast) var(--ease)}
+.sdot.off{background:var(--warn)}
+.cpu-mode{font-family:var(--font-mono);font-size:11px;line-height:16px;font-weight:500;color:var(--ok);margin-left:6px}
+.cpu-mode.stop{color:var(--warn)}
+.sim-info{flex:1;min-width:0;display:flex;flex-direction:column}
+.sim-info b{font-weight:500;font-size:13px;line-height:18px;color:var(--tx-1)}
+.sim-info span{font-size:12px;line-height:16px;color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sim-btn{
+  height:28px;
+  padding:0 10px;
+  border-radius:6px;
+  border:1px solid var(--line-2);
+  background:var(--bg-3);
+  color:var(--tx-1);
+  font-size:12px;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:background-color var(--t-fast) var(--ease),transform var(--t-fast) var(--ease);
+}
+.sim-btn:hover{background:var(--bg-4)}
+.sim-btn:active{transform:scale(.97)}
+
+/* Nav */
+.nav{padding:0 12px 16px;display:flex;flex-direction:column;gap:2px}
+.nav-sec{padding:22px 12px 6px;font-size:12px;line-height:16px;color:var(--tx-3)}
+.ni{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  width:100%;
+  height:36px;
+  padding:0 12px;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  color:var(--tx-2);
+  font-size:14px;
+  text-align:left;
+  cursor:pointer;
+  user-select:none;
+  position:relative;
+  transition:background-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease);
+}
+.ni::before{content:'';position:absolute;left:-12px;top:10px;bottom:10px;width:3px;border-radius:0 2px 2px 0;background:var(--accent-line);opacity:0;transition:opacity var(--t-fast) var(--ease)}
+.ni.active::before{opacity:1}
+.ni svg{width:16px;height:16px;color:var(--tx-3);transition:color var(--t-fast) var(--ease)}
+.ni:hover{background:var(--nav-hover);color:var(--tx-1)}
+.ni.active{
+  background:var(--nav-active);
+  color:var(--tx-1);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 0 0 1px var(--line);
+}
+.ni.active svg,.ni:hover svg{color:var(--tx-1)}
+.ni-lbl{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nbadge{font-size:12px;color:var(--tx-3);font-variant-numeric:tabular-nums}
+.nbadge.alert{color:var(--crit)}
+
+.ss{flex:1}
+
+/* User */
+.su{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:12px 12px 12px 16px;
+  border-top:1px solid var(--line);
+}
+.u-av{
+  width:32px;height:32px;
+  border-radius:50%;
+  background:var(--bg-3);
+  border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;
+  font-weight:500;
+  color:var(--tx-2);
+  flex-shrink:0;
+}
+.u-txt{flex:1;min-width:0}
+.u-nm{font-size:14px;line-height:20px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.u-rl{font-size:12px;line-height:16px;color:var(--tx-3)}
+
+/* Icon button */
+.icon-btn{
+  min-width:32px;height:32px;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:0 8px;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  color:var(--tx-2);
+  cursor:pointer;
+  transition:background-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease),transform var(--t-fast) var(--ease);
+}
+.icon-btn:hover{background:var(--bg-3);color:var(--tx-1)}
+.icon-btn:active{transform:scale(.96)}
+.icon-btn svg{width:16px;height:16px}
+
+/* ══════════════════════ MAIN ══════════════════════ */
+#main{
+  margin-left:var(--sw);
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
+}
+
+#topbar{
+  height:var(--th);
+  flex-shrink:0;
+  background:var(--bg-1);
+  border-bottom:1px solid var(--line);
+  display:flex;
+  align-items:center;
+  gap:4px;
+  padding:0 24px 0 32px;
+  position:sticky;
+  top:0;z-index:50;
+}
+.crumbs{flex:1;min-width:0;display:flex;align-items:center;gap:8px;font-size:14px;color:var(--tx-3);white-space:nowrap}
+.crumbs b{font-weight:500;color:var(--tx-1);overflow:hidden;text-overflow:ellipsis}
+.tb-clock{font-family:var(--font-mono);font-size:13px;color:var(--tx-3);font-variant-numeric:tabular-nums;margin-right:12px}
+.tb-notif-btn.has-alerts{color:var(--crit)}
+.tb-notif-cnt{font-size:13px;font-weight:500;font-variant-numeric:tabular-nums}
+.i-moon{display:none}
+body.theme-light .i-sun{display:none}
+body.theme-light .i-moon{display:block}
+
+#content{flex:1;width:100%;max-width:1600px;padding:32px}
+
+/* ══════════════════════ PAGES ══════════════════════ */
+.page{display:none}
+.page.active{display:block;animation:enter var(--t-enter) var(--ease)}
+@keyframes enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.sh{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:40px;margin-bottom:24px}
+.st{font-size:28px;line-height:36px;font-weight:500}
+.sh-ctrl{display:flex;align-items:center;gap:12px}
+.sh-ctrl label{margin:0;white-space:nowrap}
+
+/* ══════════════════════ DASHBOARD TABS ══════════════════════ */
+.dash-tabs{display:flex;gap:24px;margin:-8px 0 24px;border-bottom:1px solid var(--line)}
+.dash-tab{
+  display:flex;align-items:center;gap:8px;
+  height:40px;
+  padding:0;
+  margin-bottom:-1px;
+  border:0;
+  border-bottom:2px solid transparent;
+  background:transparent;
+  color:var(--tx-2);
+  font-size:14px;
+  cursor:pointer;
+  user-select:none;
+  transition:color var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease);
+}
+.dash-tab:hover{color:var(--tx-1)}
+.dash-tab.active{color:var(--tx-1);border-bottom-color:var(--accent-line)}
+.dash-tab-badge{font-size:13px;color:var(--crit);font-variant-numeric:tabular-nums}
+.dash-tab-badge.zero{color:var(--tx-3)}
+
+.dash-pane{display:none}
+.dash-pane.active{display:block;animation:enter var(--t-enter) var(--ease)}
+
+/* ══════════════════════ GRIDS ══════════════════════ */
+.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:16px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:16px}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px}
+.g12{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:16px;margin-bottom:16px}
+.g21{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px;margin-bottom:16px}
+.g2>.panel,.g12>.panel,.g21>.panel{margin:0;display:flex;flex-direction:column}
+.g2>.panel>.pb,.g12>.panel>.pb,.g21>.panel>.pb{flex:1}
+
+/* ══════════════════════ KPI ══════════════════════ */
+.kc{
+  background:var(--bg-2);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:20px;
+  box-shadow:var(--sh-card);
+}
+.kc-lbl{font-size:13px;line-height:20px;color:var(--tx-2)}
+.kc-val{font-size:32px;line-height:40px;font-weight:500;margin-top:8px;font-variant-numeric:tabular-nums;transition:color var(--t-fast) var(--ease)}
+.kc-val.crit{color:var(--crit)}
+.kc-sub{font-size:13px;line-height:20px;color:var(--tx-3);margin-top:4px}
+
+.strip{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  background:var(--bg-2);
+  border:1px solid var(--line);
+  border-radius:12px;
+  box-shadow:var(--sh-card);
+  margin-bottom:16px;
+}
+.strip-cell{padding:16px 20px;border-left:1px solid var(--line)}
+.strip-cell:first-child{border-left:0}
+.strip-val{font-size:20px;line-height:28px;font-weight:500;margin-top:4px;font-variant-numeric:tabular-nums}
+.strip-cell .kc-sub{margin-top:0}
+
+.role-desc{font-size:13px;line-height:20px;color:var(--tx-2);margin-top:8px}
+.kc .kc-lbl.strong{font-size:14px;font-weight:500;color:var(--tx-1)}
+
+/* ══════════════════════ PANELS ══════════════════════ */
+.panel{
+  background:var(--bg-2);
+  border:1px solid var(--line);
+  border-radius:14px;
+  margin-bottom:16px;
+  box-shadow:var(--sh-card);
+  overflow:hidden;
+}
+.ph{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  min-height:56px;
+  padding:12px 20px;
+  border-bottom:1px solid var(--line);
+}
+.pt{font-size:15px;line-height:20px;font-weight:500;display:flex;align-items:baseline;gap:8px;min-width:0}
+.pt-meta{font-size:13px;font-weight:400;color:var(--tx-3);white-space:nowrap}
+.pa{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pb{padding:20px}
+
+/* ══════════════════════ TABLE ══════════════════════ */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{
+  height:40px;
+  padding:0 16px;
+  font-size:12px;
+  line-height:16px;
+  font-weight:500;
+  color:var(--tx-3);
+  text-align:left;
+  white-space:nowrap;
+  border-bottom:1px solid var(--line);
+}
+td{
+  height:48px;
+  padding:8px 16px;
+  font-size:14px;
+  line-height:20px;
+  border-bottom:1px solid var(--line);
+  white-space:nowrap;
+}
+th:first-child,td:first-child{padding-left:20px}
+th:last-child,td:last-child{padding-right:20px}
+tbody tr:last-child td{border-bottom:0}
+tbody tr{transition:background-color var(--t-fast) var(--ease)}
+tbody tr:hover td{background:var(--row-hover)}
+th.r,td.r{text-align:right}
+th.c,td.c{text-align:center}
+td.mono{font-size:13px}
+td.muted{color:var(--tx-2)}
+.cell-main{font-weight:500}
+.cell-sub{font-family:var(--font-mono);font-size:12px;line-height:16px;color:var(--tx-3)}
+.row-acts{display:flex;justify-content:flex-end;gap:4px}
+.row-acts .slot{width:32px;flex-shrink:0}
+td .empty{padding:32px 16px}
+
+/* ══════════════════════ STATUS ══════════════════════ */
+.b{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:13px;
+  line-height:20px;
+  color:var(--tx-2);
+  white-space:nowrap;
+}
+.b::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--dot,var(--tx-3));flex-shrink:0}
+.b-active,.b-completed,.b-I{--dot:var(--ok)}
+.b-requires_maintenance,.b-open{--dot:var(--warn)}
+.b-maintenance,.b-in_progress,.b-U{--dot:var(--info)}
+.b-in_repair,.b-D{--dot:var(--crit)}
+.b-storage{--dot:var(--tx-2)}
+.b-decommissioned::before,.b-cancelled::before{background:transparent;box-shadow:inset 0 0 0 1.5px var(--tx-3)}
+.b-preventive::before,.b-corrective::before,.b-inspection::before,
+.b-admin::before,.b-engineer::before,.b-storekeeper::before,.b-auditor::before,.b-viewer::before{display:none}
+
+/* Andon stack light: red fault, amber attention, green running, blue service.
+   One tier is lit, the others show as dim lenses. Storage lights nothing. */
+.lamp{
+  --r:var(--crit-dim);--a:var(--warn-dim);--g:var(--ok);--b:var(--info-dim);
+  width:6px;height:15px;flex-shrink:0;
+  border-radius:2px 2px 1px 1px;
+  background:linear-gradient(to bottom,
+    var(--r) 0 3px,transparent 3px 4px,
+    var(--a) 4px 7px,transparent 7px 8px,
+    var(--g) 8px 11px,transparent 11px 12px,
+    var(--b) 12px 15px);
+}
+.lamp.hi,.lamp.s-in_repair,.s-in_repair .lamp{--r:var(--crit);--g:var(--ok-dim)}
+.lamp.lo,.lamp.s-requires_maintenance,.s-requires_maintenance .lamp{--a:var(--warn);--g:var(--ok-dim)}
+.lamp.s-maintenance,.s-maintenance .lamp{--b:var(--info);--g:var(--ok-dim)}
+.lamp.s-storage,.s-storage .lamp{--g:var(--ok-dim)}
+.lamp.s-decommissioned,.s-decommissioned .lamp{--r:var(--track);--a:var(--track);--g:var(--track);--b:var(--track)}
+
+/* ══════════════════════ BUTTONS ══════════════════════ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:36px;
+  padding:0 14px;
+  border-radius:8px;
+  border:1px solid transparent;
+  font-size:14px;
+  font-weight:500;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:background-color var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease),transform var(--t-fast) var(--ease);
+}
+.btn:active{transform:scale(.98)}
+.btn svg{width:16px;height:16px}
+.btn-p{background:var(--btn-bg);color:var(--btn-tx);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(0,0,0,.12)}
+.btn-p:hover{background:var(--btn-bg-h)}
+.btn-g{background:var(--bg-3);border-color:var(--line-2);color:var(--tx-1)}
+.btn-g:hover{background:var(--bg-4)}
+.btn-q{background:transparent;color:var(--tx-2)}
+.btn-q:hover{background:var(--bg-3);color:var(--tx-1)}
+.btn-d{background:transparent;border-color:var(--crit-zone);color:var(--crit)}
+.btn-d:hover{background:var(--crit-soft)}
+.btn-q.danger:hover{background:var(--crit-soft);color:var(--crit)}
+.btn-sm{height:32px;padding:0 12px;font-size:13px}
+.btn-ico{width:32px;padding:0}
+
+/* ══════════════════════ INPUTS ══════════════════════ */
+input,select,textarea{
+  width:100%;
+  height:36px;
+  padding:0 12px;
+  background:var(--input-bg);
+  border:1px solid var(--input-line);
+  border-radius:8px;
+  color:var(--tx-1);
+  font:inherit;
+  font-size:14px;
+  outline:none;
+  transition:border-color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease);
+}
+textarea{height:auto;padding:8px 12px;line-height:20px;resize:vertical}
+input:hover,select:hover,textarea:hover{border-color:var(--line-2)}
+input:focus,select:focus,textarea:focus{border-color:var(--accent-line);box-shadow:0 0 0 3px var(--accent-soft)}
+input::placeholder,textarea::placeholder{color:var(--tx-3)}
+select{
+  -webkit-appearance:none;
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2385858b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 10px center;
+  padding-right:34px;
+  cursor:pointer;
+}
+select option{background:var(--bg-2);color:var(--tx-1)}
+label{display:block;font-size:13px;line-height:20px;color:var(--tx-2);margin-bottom:6px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.fg{margin-bottom:16px}
+.sw{position:relative}
+.sw input{padding-left:36px}
+.si{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--tx-3);width:16px;height:16px;pointer-events:none}
+
+/* ══════════════════════ MODAL ══════════════════════ */
+.ov{
+  position:fixed;inset:0;
+  background:var(--ov);
+  z-index:200;
+  display:none;align-items:center;justify-content:center;
+  padding:16px;
+}
+.ov.open{display:flex;animation:fade var(--t-menu) var(--ease)}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.modal{
+  background:var(--bg-2);
+  border:1px solid var(--line-2);
+  border-radius:16px;
+  width:560px;
+  max-width:100%;
+  max-height:92vh;
+  overflow-y:auto;
+  box-shadow:var(--sh-float);
+  animation:modal-in var(--t-menu) var(--ease);
+}
+.modal.sm{width:440px}
+.modal.lg{width:640px}
+@keyframes modal-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.mh{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 12px 12px 24px;
+  border-bottom:1px solid var(--line);
+}
+.mt{font-size:16px;line-height:24px;font-weight:500}
+.mb{padding:20px 24px 4px}
+.mf{display:flex;justify-content:flex-end;gap:8px;padding:16px 24px;border-top:1px solid var(--line)}
+.note-crit{
+  display:flex;gap:10px;align-items:flex-start;
+  padding:12px;
+  margin-bottom:16px;
+  border-radius:8px;
+  background:var(--crit-soft);
+  color:var(--crit);
+  font-size:13px;
+  line-height:20px;
+}
+.note-crit svg{width:16px;height:16px;margin-top:2px}
+
+/* Audit diff */
+.diff-head{display:flex;gap:12px;align-items:center;margin-bottom:16px}
+.diff-wrap{max-height:360px;overflow-y:auto;border-top:1px solid var(--line)}
+.diff-row{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-family:var(--font-mono);font-size:12px;line-height:16px}
+.diff-row.changed{background:var(--warn-soft)}
+.diff-k{width:160px;flex-shrink:0;color:var(--tx-3)}
+.diff-old{flex:1;min-width:0;color:var(--crit);overflow:hidden;text-overflow:ellipsis}
+.diff-new{flex:1;min-width:0;color:var(--tx-1);overflow:hidden;text-overflow:ellipsis}
+
+/* ══════════════════════ PAGINATION ══════════════════════ */
+.pag{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 20px;
+  border-top:1px solid var(--line);
+  font-size:13px;
+  color:var(--tx-3);
+}
+.pag:empty{display:none}
+.pbtns{display:flex;align-items:center;gap:4px}
+.pbtn{
+  min-width:32px;height:32px;
+  padding:0 8px;
+  border-radius:8px;
+  border:1px solid transparent;
+  background:transparent;
+  color:var(--tx-2);
+  font-size:13px;
+  font-variant-numeric:tabular-nums;
+  cursor:pointer;
+  transition:background-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease);
+}
+.pbtn:hover{background:var(--bg-3);color:var(--tx-1)}
+.pbtn.act{background:var(--bg-3);border-color:var(--line-2);color:var(--tx-1)}
+.pbtn:disabled{opacity:.4;cursor:default;background:transparent}
+.pag-gap{color:var(--tx-3);padding:0 4px}
+
+/* ══════════════════════ TOASTS ══════════════════════ */
+#toasts{
+  position:fixed;bottom:24px;right:24px;
+  z-index:999;
+  display:flex;flex-direction:column;gap:8px;
+  pointer-events:none;
+}
+.toast{
+  display:flex;align-items:flex-start;gap:10px;
+  min-width:260px;max-width:380px;
+  padding:12px 16px;
+  background:var(--toast-bg);
+  border:1px solid var(--line-2);
+  border-radius:10px;
+  box-shadow:var(--sh-float);
+  font-size:13px;
+  line-height:20px;
+  pointer-events:auto;
+  animation:toast-in var(--t-menu) var(--ease);
+}
+.toast::before{content:'';width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0;background:var(--accent)}
+.t-ok::before{background:var(--ok)}
+.t-err::before{background:var(--crit)}
+.toast.has-ico::before{display:none}
+.toast svg{width:16px;height:16px;margin-top:2px;color:var(--crit)}
+.toast .mono{font-size:12px}
+@keyframes toast-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ══════════════════════ FILTER BAR ══════════════════════ */
+.fb{
+  display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+  padding:12px 20px;
+  border-bottom:1px solid var(--line);
+}
+.fb select,.fb input{width:auto;flex:0 1 200px;min-width:160px}
+.fb .sw{flex:0 1 320px;min-width:200px}
+.fb .sw input{width:100%;min-width:0}
+.fb-select{width:auto;min-width:180px}
+
+/* ══════════════════════ INSTRUMENTS ══════════════════════ */
+.plate{
+  font-family:var(--font-mono);
+  font-size:12px;
+  line-height:16px;
+  font-weight:500;
+  color:var(--tx-2);
+  padding:1px 6px;
+  border:1px solid var(--line-2);
+  border-radius:4px;
+  white-space:nowrap;
+}
+
+/* ISA-101 moving analog indicator: a quiet track, hatched alarm zones beyond the
+   thresholds and a pointer at the value. Grey while normal, coloured only in alarm. */
+.scale{position:relative;height:6px;margin-top:6px;container-type:inline-size}
+.scale-trk{position:absolute;inset:0;border-radius:1px;overflow:hidden;background:var(--track)}
+.scale-zone{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(135deg,var(--crit-zone) 0 2px,transparent 2px 4px)}
+.scale-zone.lo{background:repeating-linear-gradient(135deg,var(--warn-zone) 0 2px,transparent 2px 4px)}
+.scale-run{position:absolute;top:-6px;bottom:-2px;left:0;right:0;pointer-events:none}
+.scale-run i{position:absolute;left:-1px;top:6px;bottom:0;width:2px;background:var(--tx-1);transform:translateX(calc(var(--p,0) * 100cqw));transition:transform 400ms var(--ease),background-color var(--t-fast) var(--ease)}
+.scale-run i::before{content:'';position:absolute;left:-3px;top:-6px;border:4px solid transparent;border-bottom:0;border-top:5px solid var(--tx-1);transition:border-color var(--t-fast) var(--ease)}
+.scale.hi .scale-run i{background:var(--crit)}
+.scale.hi .scale-run i::before{border-top-color:var(--crit)}
+.scale.lo .scale-run i{background:var(--warn)}
+.scale.lo .scale-run i::before{border-top-color:var(--warn)}
+
+.inst-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.inst{
+  padding:20px;
+  border-left:1px solid var(--line);
+  cursor:pointer;
+  transition:background-color var(--t-fast) var(--ease);
+}
+.inst:first-child{border-left:0}
+.inst:hover{background:var(--row-hover)}
+.inst-hd{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.inst-lbl{font-size:13px;color:var(--tx-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inst-val{
+  display:flex;align-items:baseline;gap:8px;
+  margin:12px 0 16px;
+  font-size:32px;
+  line-height:40px;
+  font-weight:500;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+.inst-val .num{transition:color var(--t-fast) var(--ease)}
+.inst-u{font-size:13px;line-height:20px;font-weight:400;color:var(--tx-3)}
+.inst.hi .num,.rd.hi .num{color:var(--crit)}
+.inst.lo .num,.rd.lo .num{color:var(--warn)}
+.inst-lbls{display:flex;justify-content:space-between;gap:8px;margin-top:12px;font-size:12px;line-height:16px;color:var(--tx-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.inst-empty .inst-val .num{color:var(--tx-3)}
+
+/* Telemetry unit cards */
+.unit-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:16px}
+.unit{
+  background:var(--bg-2);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:20px;
+  box-shadow:var(--sh-card);
+}
+.unit-hd{display:flex;align-items:center;gap:8px;margin-bottom:20px}
+.unit-type{flex:1;min-width:0;font-size:12px;line-height:16px;color:var(--tx-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rd + .rd{margin-top:16px}
+.rd-hd{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px}
+.rd-lbl{font-size:13px;color:var(--tx-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rd-val{font-size:15px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rd-val .unit-u{font-size:12px;font-weight:400;color:var(--tx-3);margin-left:4px}
+.rd .scale{height:4px}
+.rd .scale-trk{border-radius:2px}
+
+/* Live charts */
+/* One main trend across the width, the rest as compact traces that promote on click */
+.lcg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:16px}
+.lcp{
+  background:var(--bg-2);
+  border:1px solid var(--line);
+  border-radius:12px;
+  box-shadow:var(--sh-card);
+  overflow:hidden;
+  display:block;
+  width:100%;
+  min-width:0;
+  text-align:left;
+  font:inherit;
+  color:inherit;
+}
+button.lcp{cursor:pointer;transition:border-color var(--t-fast) var(--ease),background-color var(--t-fast) var(--ease)}
+button.lcp:hover{border-color:var(--line-2);background:var(--bg-3)}
+.lcp-h{display:flex;align-items:baseline;gap:8px;padding:12px 16px 0}
+.lcp-t{flex:1;min-width:0;font-size:13px;line-height:20px;color:var(--tx-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lcp-t b{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--tx-1);margin-right:4px}
+.lcp-v{font-size:14px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap;transition:color var(--t-fast) var(--ease)}
+.lcp-v.hi{color:var(--crit)}
+.lcp-v.lo{color:var(--warn)}
+.lcp-c{position:relative;height:64px;padding:8px 0 0}
+.lcp.main{grid-column:1/-1}
+.lcp.main .lcp-h{align-items:flex-end;gap:16px;padding:20px 20px 0}
+.lcp.main .lcp-t{font-size:15px;line-height:20px;padding-bottom:6px;color:var(--tx-1)}
+.lcp.main .lcp-t b{font-size:13px}
+.lcp.main .lcp-v{font-size:32px;line-height:40px}
+.lcp.main .lcp-v small{font-size:14px;font-weight:400;color:var(--tx-3);margin-left:6px}
+.lcp-thr{font-family:var(--font-mono);font-size:12px;line-height:16px;color:var(--tx-3);white-space:nowrap;padding-bottom:8px}
+.lcp.main .lcp-c{height:280px;padding:16px 12px 12px 8px}
+
+/* Historical */
+.hist-ctrl{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:20px}
+.hist-ctrl > div{flex:0 1 240px;min-width:180px}
+.hist-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:10px;margin-bottom:20px}
+.hist-stat{padding:12px 16px;border-left:1px solid var(--line)}
+.hist-stat:first-child{border-left:0}
+.hist-stat span{display:block;font-size:12px;line-height:16px;color:var(--tx-3)}
+.hist-stat b{display:block;font-size:16px;line-height:24px;font-weight:500;margin-top:4px;font-variant-numeric:tabular-nums}
+.hist-chart{height:320px}
+.hist-chart.is-empty{height:auto}
+.hist-chart.is-empty canvas{display:none}
+.hist-empty{padding:32px 0 12px;text-align:center;font-size:13px;color:var(--tx-3)}
+.hist-chart:not(.is-empty) .hist-empty{display:none}
+
+/* ══════════════════════ FLEET MAP ══════════════════════ */
+/* Rack: every unit is a module clipped to a DIN rail, with a printed wire-marker
+   tag, its stack light and an electromechanical hour meter showing real motor hours */
+.fleet{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:24px 8px;padding-top:4px}
+.tile{
+  position:relative;
+  display:flex;flex-direction:column;gap:12px;
+  padding:16px 12px 12px;
+  border:1px solid var(--line-2);
+  border-radius:4px;
+  background:var(--bg-3);
+  text-align:left;
+  cursor:pointer;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+  transition:border-color var(--t-fast) var(--ease),background-color var(--t-fast) var(--ease);
+}
+.tile::before{
+  content:'';position:absolute;left:-5px;right:-5px;top:-5px;height:4px;
+  background:linear-gradient(to bottom,var(--bg-4),var(--bg-3));
+  border:1px solid var(--line-2);border-radius:1px;
+}
+.tile:hover{border-color:rgba(236,235,230,.24);background:var(--bg-4)}
+body.theme-light .tile:hover{border-color:rgba(25,25,23,.28)}
+.tile-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.tile-id{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0}
+.tag{
+  max-width:100%;
+  font-family:var(--font-mono);font-size:12px;line-height:16px;font-weight:500;
+  color:#1a1a18;background:#e8e5d9;
+  padding:2px 8px;border-radius:3px;
+  box-shadow:inset 3px 0 0 rgba(0,0,0,.07),inset -3px 0 0 rgba(0,0,0,.07),0 0 0 1px rgba(0,0,0,.18);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.tile-st{font-size:13px;line-height:16px;color:var(--tx-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.s-in_repair .tile-st{color:var(--crit)}
+.s-requires_maintenance .tile-st{color:var(--warn)}
+.tile.s-decommissioned{background-image:repeating-linear-gradient(135deg,transparent 0 6px,var(--line) 6px 7px)}
+.tile.s-decommissioned .tag{opacity:.55}
+.tile.s-decommissioned .tile-st,.tile.s-storage .tile-st{color:var(--tx-3)}
+
+.meter{display:flex;align-items:center;gap:6px}
+.meter-win{
+  display:flex;gap:1px;padding:2px;
+  background:#050505;border-radius:3px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.06),inset 0 1px 2px rgba(0,0,0,.6);
+}
+.meter-win i{
+  width:12px;height:20px;
+  display:flex;align-items:center;justify-content:center;
+  font:500 13px/1 var(--font-mono);font-style:normal;
+  color:#ecebe6;
+  background:linear-gradient(to bottom,#0b0b0a 0%,#262624 45%,#262624 55%,#0b0b0a 100%);
+  border-radius:1px;
+}
+.meter-win i.tenth{color:#141413;background:linear-gradient(to bottom,#bdb9ad 0%,#ecebe6 45%,#ecebe6 55%,#bdb9ad 100%)}
+.meter-u{font-size:12px;line-height:16px;color:var(--tx-3)}
+.tile.s-decommissioned .meter{opacity:.5}
+
+/* ══════════════════════ BAR LISTS ══════════════════════ */
+.bars{display:flex;flex-direction:column;gap:16px}
+.bars.tight{gap:12px}
+.bars.loose{gap:24px}
+#dash-task-status{display:flex;flex-direction:column;justify-content:center}
+.bar-hd{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;line-height:20px}
+.bar-lbl{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-cnt{font-size:12px;color:var(--tx-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar-cnt b{font-weight:500;color:var(--tx-1)}
+.bar-trk{height:4px;margin-top:6px;border-radius:2px;background:var(--track);overflow:hidden}
+.bar-fill{height:100%;width:100%;background:var(--bar);transform-origin:left center;transition:transform 500ms var(--ease)}
+
+/* Task pipeline */
+.pipe-figs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.pipe-fig span{display:flex;align-items:center;gap:8px;font-size:13px;line-height:20px;color:var(--tx-2)}
+.pipe-fig span::before{content:'';width:8px;height:8px;border-radius:2px;background:var(--seg);flex-shrink:0}
+.pipe-fig b{display:block;font-size:24px;line-height:32px;font-weight:500;margin-top:4px;font-variant-numeric:tabular-nums}
+.pipe-bar{display:flex;gap:2px;height:8px;margin-top:20px;border-radius:4px;overflow:hidden;background:var(--track)}
+.pipe-seg{background:var(--seg);min-width:0}
+.seg-open{--seg:var(--accent)}
+.seg-prog{--seg:var(--tx-3)}
+.seg-done{--seg:var(--bar)}
+
+/* ══════════════════════ NOTIFICATIONS ══════════════════════ */
+.notif-toolbar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding:12px 20px;
+  border-bottom:1px solid var(--line);
+}
+.notif-stats{display:flex;gap:20px;font-size:13px;color:var(--tx-2)}
+.notif-stats span{display:inline-flex;align-items:center;gap:8px}
+.notif-stats b{font-weight:500;color:var(--tx-1);font-variant-numeric:tabular-nums}
+.notif-stats .ns-hi::before,.notif-stats .ns-lo::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--crit)}
+.notif-stats .ns-lo::before{background:var(--warn)}
+.notif-filters{display:flex;gap:8px}
+.notif-list{display:flex;flex-direction:column}
+.notif-card{
+  display:flex;align-items:center;gap:12px;
+  padding:16px 20px;
+  border-bottom:1px solid var(--line);
+  transition:opacity var(--t-fast) var(--ease);
+}
+.notif-card:last-child{border-bottom:0}
+.notif-icon{
+  width:32px;height:32px;
+  border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  background:var(--crit-soft);
+  color:var(--crit);
+}
+.notif-icon svg{width:16px;height:16px}
+.notif-lo .notif-icon{background:var(--warn-soft);color:var(--warn)}
+.notif-body{flex:1;min-width:0}
+.notif-title{font-size:14px;line-height:20px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.notif-title .plate{margin-right:8px}
+.notif-meta{font-size:13px;line-height:20px;color:var(--tx-2);margin-top:4px}
+.notif-meta .num{font-weight:500;color:var(--crit)}
+.notif-lo .notif-meta .num{color:var(--warn)}
+.notif-side{display:flex;align-items:center;gap:16px;flex-shrink:0}
+.notif-time{font-size:12px;font-variant-numeric:tabular-nums;color:var(--tx-3);white-space:nowrap}
+.notif-done{font-size:12px;color:var(--tx-3);min-width:96px;text-align:right}
+.notif-card.notif-ack .notif-icon{background:var(--bg-3);color:var(--tx-3)}
+.notif-card.notif-ack .notif-title{color:var(--tx-2)}
+.notif-card.notif-ack .notif-meta,.notif-card.notif-ack .notif-meta .num{color:var(--tx-3)}
+.notif-empty{display:flex;flex-direction:column;align-items:center;gap:4px;padding:64px 20px;text-align:center}
+.notif-empty svg{width:24px;height:24px;color:var(--tx-3);margin-bottom:8px}
+.notif-empty b{font-size:14px;font-weight:500;color:var(--tx-2)}
+.notif-empty span{font-size:13px;color:var(--tx-3)}
+
+/* ══════════════════════ EMPTY ══════════════════════ */
+.empty{padding:48px 16px;text-align:center;font-size:13px;color:var(--tx-3)}
+.spin{
+  width:16px;height:16px;
+  border:2px solid var(--line-2);
+  border-top-color:var(--tx-2);
+  border-radius:50%;
+  animation:spin .8s linear infinite;
+  margin:0 auto;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.err-cell{color:var(--crit);text-align:center}
+
+/* ══════════════════════ LOGIN ══════════════════════ */
+#ls{
+  position:fixed;inset:0;z-index:500;
+  background:var(--bg-1);
+  display:flex;align-items:center;justify-content:center;
+  padding:16px;
+}
+.lb{
+  width:400px;
+  max-width:100%;
+  background:var(--bg-2);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:32px;
+  box-shadow:var(--sh-float);
+  animation:enter var(--t-enter) var(--ease);
+}
+.ll{display:flex;align-items:center;gap:12px;margin-bottom:32px}
+.ll .brand-mark{width:28px;height:28px}
+.lm{display:block;font-size:20px;line-height:24px;font-weight:600;letter-spacing:.02em}
+.ls2{display:block;font-size:13px;line-height:20px;color:var(--tx-2)}
+.lb .btn-p{width:100%;height:40px;margin-top:8px}
+.demo-box{margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
+.demo-t{font-size:13px;line-height:20px;color:var(--tx-2);margin-bottom:4px}
+.demo-r{display:flex;align-items:center;justify-content:space-between;height:32px;font-size:13px;color:var(--tx-2)}
+.demo-pick{
+  font-family:var(--font-mono);
+  font-size:12px;
+  color:var(--tx-1);
+  background:transparent;
+  border:0;
+  padding:4px 8px;
+  margin-right:-8px;
+  border-radius:6px;
+  cursor:pointer;
+  transition:background-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease);
+}
+.demo-pick:hover{background:var(--bg-3);color:var(--accent-line)}
+
+/* ══════════════════════ RESPONSIVE ══════════════════════ */
+@media(max-width:1280px){
+  .g4,.unit-grid,.inst-grid,.strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .inst:nth-child(3),.strip-cell:nth-child(3){border-left:0}
+  .inst:nth-child(n+3),.strip-cell:nth-child(n+3){border-top:1px solid var(--line)}
+  .g3{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:1080px){
+  .g2,.g12,.g21,.lcg{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:900px){
+  :root{--sw:64px}
+  .brand-txt,.sim-info,.sim-btn,.nav-sec,.ni-lbl,.nbadge,.u-txt,.tb-clock{display:none}
+  .brand{padding:0;justify-content:center}
+  .sim-box{justify-content:center;margin:12px 8px 0;padding:12px 0}
+  .nav{padding:12px 8px 16px}
+  .ni{justify-content:center;padding:0}
+  .su{flex-direction:column;padding:12px 0}
+  #topbar{padding:0 12px 0 16px}
+  #content{padding:24px 16px}
+}
+@media(max-width:640px){
+  .g4,.g3,.unit-grid,.inst-grid,.strip,.fr,.hist-stats,.pipe-figs{grid-template-columns:minmax(0,1fr)}
+  .inst,.strip-cell{border-left:0;border-top:1px solid var(--line)}
+  .inst:first-child,.strip-cell:first-child{border-top:0}
+  .hist-stat{border-left:0;border-top:1px solid var(--line)}
+  .hist-stat:first-child{border-top:0}
+  .sh{flex-wrap:wrap}
+  .st{font-size:24px;line-height:32px}
+  .fleet{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pt{flex-wrap:wrap;row-gap:0}
+  .notif-side .notif-time{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:1ms!important;transition-duration:1ms!important}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="ls">
+  <div class="lb">
+    <div class="ll">
+      <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 16h4.5V8h11v8H22"/><path d="M9.5 8v3"/><path d="M14.5 8v3"/></svg>
+      <div>
+        <span class="lm">СМО</span>
+        <span class="ls2">Система мониторинга оборудования</span>
+      </div>
+    </div>
+    <div class="fg"><label for="l-em">Электронная почта</label><input type="email" id="l-em" value="admin@company.com" placeholder="user@company.com" autocomplete="username"/></div>
+    <div class="fg"><label for="l-pw">Пароль</label><input type="password" id="l-pw" value="admin123" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+    <button class="btn btn-p" onclick="doLogin()">Войти</button>
+    <div class="demo-box">
+      <div class="demo-t">Демо-аккаунты</div>
+      <div class="demo-r"><span>Администратор</span><button type="button" class="demo-pick" onclick="setDemo('admin@company.com','admin123')">admin / admin123</button></div>
+      <div class="demo-r"><span>Инженер</span><button type="button" class="demo-pick" onclick="setDemo('engineer@company.com','eng123')">engineer / eng123</button></div>
+      <div class="demo-r"><span>Кладовщик</span><button type="button" class="demo-pick" onclick="setDemo('store@company.com','store123')">store / store123</button></div>
+      <div class="demo-r"><span>Аудитор</span><button type="button" class="demo-pick" onclick="setDemo('auditor@company.com','audit123')">auditor / audit123</button></div>
+      <div class="demo-r"><span>Наблюдатель</span><button type="button" class="demo-pick" onclick="setDemo('viewer@company.com','view123')">viewer / view123</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<aside id="sidebar">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 16h4.5V8h11v8H22"/><path d="M9.5 8v3"/><path d="M14.5 8v3"/></svg>
+    <div class="brand-txt">
+      <div class="brand-name">СМО</div>
+      <div class="brand-sub">Мониторинг оборудования</div>
+    </div>
+  </div>
+
+  <div class="sim-box">
+    <span class="sdot" id="sdot"></span>
+    <div class="sim-info">
+      <b id="sim-status-txt">Симулятор<span class="cpu-mode">RUN</span></b>
+      <span id="sim-freq-txt">каждые 2 с</span>
+    </div>
+    <button class="sim-btn" onclick="toggleSimulator()" id="sim-btn-toggle">Пауза</button>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-sec">Главное</div>
+    <button type="button" class="ni active" onclick="showPage('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+      <span class="ni-lbl">Сводка</span><span class="nbadge alert" id="nb-notif" style="display:none">0</span>
+    </button>
+
+    <div class="nav-sec">Инвентаризация</div>
+    <button type="button" class="ni" onclick="showPage('equipment')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+      <span class="ni-lbl">Оборудование</span><span class="nbadge" id="nb-eq">–</span>
+    </button>
+    <button type="button" class="ni" onclick="showPage('locations')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span class="ni-lbl">Локации</span>
+    </button>
+
+    <div class="nav-sec">Мониторинг</div>
+    <button type="button" class="ni" onclick="showPage('telemetry')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      <span class="ni-lbl">Телеметрия</span>
+    </button>
+    <button type="button" class="ni" onclick="showPage('maintenance')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      <span class="ni-lbl">Обслуживание</span><span class="nbadge" id="nb-tasks">–</span>
+    </button>
+
+    <div class="nav-sec">Администрирование</div>
+    <button type="button" class="ni" id="nav-audit" onclick="showPage('audit')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span class="ni-lbl">Журнал аудита</span>
+    </button>
+    <button type="button" class="ni" id="nav-emp" onclick="showPage('employees')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span class="ni-lbl">Сотрудники</span>
+    </button>
+    <button type="button" class="ni" onclick="showPage('roles')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <span class="ni-lbl">Матрица прав доступа</span>
+    </button>
+  </nav>
+
+  <div class="ss"></div>
+  <div class="su">
+    <div class="u-av" id="u-av">–</div>
+    <div class="u-txt"><div class="u-nm" id="u-nm">–</div><div class="u-rl" id="u-rl">–</div></div>
+    <button class="icon-btn" onclick="logout()" title="Выйти" aria-label="Выйти">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+    </button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div id="main">
+  <header id="topbar">
+    <div class="crumbs"><span id="tb-group">Главное</span><span aria-hidden="true">/</span><b id="tb-title">Сводка</b></div>
+    <div class="tb-clock" id="tb-clock">00:00:00</div>
+    <button class="icon-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Сменить тему" aria-label="Сменить тему">
+      <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+      <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+    </button>
+    <button class="icon-btn tb-notif-btn" id="tb-notif-btn" onclick="showPage('dashboard');setTimeout(()=>switchDashTab('notifications'),100)" title="Уведомления" aria-label="Уведомления">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      <span class="tb-notif-cnt" id="tb-notif-badge" style="display:none">0</span>
+    </button>
+  </header>
+
+  <main id="content">
+
+    <!-- ══ СВОДКА ══ -->
+    <div class="page active" id="page-dashboard">
+      <div class="sh"><h1 class="st">Сводка</h1></div>
+
+      <div class="dash-tabs" role="tablist">
+        <button type="button" role="tab" class="dash-tab active" id="dtab-overview" onclick="switchDashTab('overview')">Обзор</button>
+        <button type="button" role="tab" class="dash-tab" id="dtab-notifications" onclick="switchDashTab('notifications')">
+          Уведомления <span class="dash-tab-badge zero" id="dash-tab-notif-badge">0</span>
+        </button>
+      </div>
+
+      <!-- ── OVERVIEW PANE ── -->
+      <div class="dash-pane active" id="dpane-overview">
+
+        <div class="g4">
+          <div class="kc">
+            <div class="kc-lbl">Всего оборудования</div>
+            <div class="kc-val" id="d-total">–</div>
+            <div class="kc-sub">единиц в реестре</div>
+          </div>
+          <div class="kc">
+            <div class="kc-lbl">Активное</div>
+            <div class="kc-val" id="d-active">–</div>
+            <div class="kc-sub">в эксплуатации</div>
+          </div>
+          <div class="kc">
+            <div class="kc-lbl">В ремонте и требует ТО</div>
+            <div class="kc-val" id="d-repair">–</div>
+            <div class="kc-sub" id="d-maint-sub">требует внимания</div>
+          </div>
+          <div class="kc">
+            <div class="kc-lbl">Открытые задачи ТО</div>
+            <div class="kc-val" id="d-tasks">–</div>
+            <div class="kc-sub">в очереди</div>
+          </div>
+        </div>
+
+        <div class="strip">
+          <div class="strip-cell">
+            <div class="kc-lbl">На складе</div>
+            <div class="strip-val" id="d-storage">–</div>
+            <div class="kc-sub">не в эксплуатации</div>
+          </div>
+          <div class="strip-cell">
+            <div class="kc-lbl">Списано</div>
+            <div class="strip-val" id="d-decomm">–</div>
+            <div class="kc-sub">выведено из строя</div>
+          </div>
+          <div class="strip-cell">
+            <div class="kc-lbl">Закупочная стоимость</div>
+            <div class="strip-val" id="d-cost">–</div>
+            <div class="kc-sub">суммарно по реестру</div>
+          </div>
+          <div class="strip-cell">
+            <div class="kc-lbl">Остаточная стоимость</div>
+            <div class="strip-val" id="d-res">–</div>
+            <div class="kc-sub" id="d-depr-sub">амортизация</div>
+          </div>
+        </div>
+
+        <!-- Live sensors -->
+        <section class="panel">
+          <div class="ph">
+            <h2 class="pt">Датчики <span class="pt-meta" id="dash-sens-meta">обновление каждые 2 с</span></h2>
+            <button class="btn btn-g btn-sm" onclick="showPage('telemetry')">Все датчики</button>
+          </div>
+          <div id="dash-live-metrics" class="inst-grid"></div>
+        </section>
+
+        <div class="g21">
+          <section class="panel">
+            <div class="ph"><h2 class="pt">Статус оборудования <span class="pt-meta" id="fleet-meta"></span></h2></div>
+            <div class="pb"><div class="fleet" id="dash-fleet"></div></div>
+          </section>
+          <section class="panel">
+            <div class="ph"><h2 class="pt">Оборудование по типам</h2></div>
+            <div class="pb"><div class="bars tight" id="dash-eq-types"></div></div>
+          </section>
+        </div>
+
+        <div class="g2">
+          <section class="panel">
+            <div class="ph"><h2 class="pt">Задачи ТО по статусу</h2></div>
+            <div class="pb" id="dash-task-status"></div>
+          </section>
+          <section class="panel">
+            <div class="ph"><h2 class="pt">Задачи ТО по типу</h2></div>
+            <div class="pb"><div class="bars" id="dash-task-types"></div></div>
+          </section>
+        </div>
+
+        <div class="g12">
+          <section class="panel">
+            <div class="ph"><h2 class="pt">Сводка по статусам</h2></div>
+            <div class="pb"><div class="bars loose" id="dash-status-bars"><div class="empty">Загрузка…</div></div></div>
+          </section>
+          <section class="panel">
+            <div class="ph">
+              <h2 class="pt">Последние изменения</h2>
+              <button class="btn btn-g btn-sm" onclick="showPage('equipment')">Весь реестр</button>
+            </div>
+            <div class="tw">
+              <table>
+                <thead><tr><th>Оборудование</th><th>Статус</th><th>Тип</th><th class="r">Моточасы</th></tr></thead>
+                <tbody id="dash-eq-list"><tr><td colspan="4" class="empty">Загрузка…</td></tr></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+      </div><!-- /dpane-overview -->
+
+      <!-- ── NOTIFICATIONS PANE ── -->
+      <div class="dash-pane" id="dpane-notifications">
+        <section class="panel">
+          <div class="ph">
+            <h2 class="pt">Превышения порогов <span class="pt-meta" id="notif-summary">–</span></h2>
+            <div class="pa">
+              <button class="btn btn-g btn-sm" onclick="ackAllNotifs()">Подтвердить все</button>
+              <button class="btn btn-d btn-sm" onclick="clearAllNotifs()">Очистить</button>
+            </div>
+          </div>
+
+          <div class="notif-toolbar">
+            <div class="notif-stats">
+              <span class="ns-hi">Критических <b id="ns-hi-cnt">0</b></span>
+              <span class="ns-lo">Предупреждений <b id="ns-lo-cnt">0</b></span>
+              <span class="ns-total">Всего <b id="ns-total-cnt">0</b></span>
+            </div>
+            <div class="notif-filters">
+              <select id="notif-filter-type" onchange="renderNotifications()" class="fb-select" aria-label="Тип уведомления">
+                <option value="">Все типы</option>
+                <option value="hi">Выше порога</option>
+                <option value="lo">Ниже минимума</option>
+              </select>
+              <select id="notif-filter-ack" onchange="renderNotifications()" class="fb-select" aria-label="Статус уведомления">
+                <option value="unread">Непрочитанные</option>
+                <option value="">Все</option>
+                <option value="ack">Подтверждённые</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="notif-list-wrap"></div>
+        </section>
+      </div><!-- /dpane-notifications -->
+
+    </div><!-- /page-dashboard -->
+
+    <!-- ══ ТЕЛЕМЕТРИЯ ══ -->
+    <div class="page" id="page-telemetry">
+      <div class="sh">
+        <h1 class="st">Мониторинг датчиков</h1>
+        <div class="sh-ctrl">
+          <label for="tel-interval">Обновление</label>
+          <select id="tel-interval" onchange="changeSimInterval()" class="fb-select">
+            <option value="1000">Каждую секунду</option>
+            <option value="2000" selected>Каждые 2 с</option>
+            <option value="5000">Каждые 5 с</option>
+            <option value="10000">Каждые 10 с</option>
+          </select>
+        </div>
+      </div>
+      <div id="live-cards-grid" class="unit-grid"></div>
+      <div class="lcg" id="live-charts-wrap"></div>
+      <section class="panel">
+        <div class="ph"><h2 class="pt">Исторический анализ</h2></div>
+        <div class="pb">
+          <div class="hist-ctrl">
+            <div><label for="tel-eq-sel">Оборудование</label><select id="tel-eq-sel" onchange="onTelEqChange()"><option value="">Выберите оборудование</option></select></div>
+            <div><label for="tel-met-sel">Метрика</label><select id="tel-met-sel" onchange="loadHistChart()"><option value="">Выберите метрику</option></select></div>
+            <div><label for="tel-hrs">Период</label><select id="tel-hrs" onchange="loadHistChart()"><option value="6">6 часов</option><option value="24" selected>24 часа</option><option value="72">3 дня</option><option value="168">7 дней</option></select></div>
+            <button class="btn btn-g" onclick="loadHistChart()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+              Обновить
+            </button>
+          </div>
+          <div class="hist-stats">
+            <div class="hist-stat"><span>Минимум</span><b id="h-min">–</b></div>
+            <div class="hist-stat"><span>Максимум</span><b id="h-max">–</b></div>
+            <div class="hist-stat"><span>Среднее</span><b id="h-avg">–</b></div>
+            <div class="hist-stat"><span>Записей</span><b id="h-cnt">–</b></div>
+          </div>
+          <div class="hist-chart is-empty" id="hist-chart-wrap"><canvas id="ch-hist"></canvas><div class="hist-empty">Выберите оборудование и метрику, чтобы построить тренд</div></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ══ ОБОРУДОВАНИЕ ══ -->
+    <div class="page" id="page-equipment">
+      <div class="sh"><h1 class="st">Реестр оборудования</h1><div id="eq-add-btn"></div></div>
+      <section class="panel">
+        <div class="fb">
+          <div class="sw">
+            <svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="eq-search" placeholder="Название или серийный номер" aria-label="Поиск" oninput="debouncedLoadEquipment()"/>
+          </div>
+          <select id="eq-st" onchange="loadEquipment()" aria-label="Статус"><option value="">Все статусы</option><option value="active">Активное</option><option value="maintenance">На обслуживании</option><option value="requires_maintenance">Требует ТО</option><option value="in_repair">В ремонте</option><option value="decommissioned">Списано</option><option value="storage">На складе</option></select>
+          <select id="eq-tp" onchange="loadEquipment()" aria-label="Тип"><option value="">Все типы</option></select>
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th>Наименование</th><th>Серийный номер</th><th>Тип</th><th>Расположение</th><th>Статус</th><th class="r">Моточасы</th><th class="r">Стоимость</th><th class="r">Действия</th></tr></thead>
+          <tbody id="eq-tbody"><tr><td colspan="8"><div class="empty"><div class="spin"></div></div></td></tr></tbody>
+        </table></div>
+        <div class="pag" id="eq-pag"></div>
+      </section>
+    </div>
+
+    <!-- ══ ЛОКАЦИИ ══ -->
+    <div class="page" id="page-locations">
+      <div class="sh">
+        <h1 class="st">Локации и склады</h1>
+        <button class="btn btn-p" onclick="openLocModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          Добавить локацию
+        </button>
+      </div>
+      <section class="panel"><div class="tw"><table>
+        <thead><tr><th>Название</th><th>Адрес</th><th>Вышестоящая локация</th><th class="r">Единиц</th></tr></thead>
+        <tbody id="loc-tbody"><tr><td colspan="4"><div class="empty"><div class="spin"></div></div></td></tr></tbody>
+      </table></div></section>
+    </div>
+
+    <!-- ══ ОБСЛУЖИВАНИЕ ══ -->
+    <div class="page" id="page-maintenance">
+      <div class="sh"><h1 class="st">Обслуживание и ремонты</h1><div id="task-add-btn"></div></div>
+      <div class="g3" id="task-kpis">
+        <div class="kc"><div class="kc-lbl">Открытые задачи</div><div class="kc-val" id="tk-open">–</div></div>
+        <div class="kc"><div class="kc-lbl">В работе</div><div class="kc-val" id="tk-prog">–</div></div>
+        <div class="kc"><div class="kc-lbl">Выполнено</div><div class="kc-val" id="tk-done">–</div></div>
+      </div>
+      <section class="panel">
+        <div class="fb">
+          <select id="task-st" onchange="loadTasks()" aria-label="Статус"><option value="">Все статусы</option><option value="open">Открытые</option><option value="in_progress">В работе</option><option value="completed">Выполненные</option><option value="cancelled">Отменённые</option></select>
+          <select id="task-tp" onchange="loadTasks()" aria-label="Тип"><option value="">Все типы</option><option value="preventive">Плановое</option><option value="corrective">Корректирующее</option><option value="inspection">Инспекция</option></select>
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th>Оборудование</th><th>Тип</th><th>Статус</th><th>Исполнитель</th><th>Запланировано</th><th>Завершено</th><th class="r">Затраты</th><th class="r">Действия</th></tr></thead>
+          <tbody id="task-tbody"><tr><td colspan="8"><div class="empty"><div class="spin"></div></div></td></tr></tbody>
+        </table></div>
+        <div class="pag" id="task-pag"></div>
+      </section>
+    </div>
+
+    <!-- ══ АУДИТ ══ -->
+    <div class="page" id="page-audit">
+      <div class="sh"><h1 class="st">Журнал аудита операций</h1></div>
+      <section class="panel">
+        <div class="fb">
+          <select id="aud-op" onchange="loadAudit()" aria-label="Операция"><option value="">Все операции</option><option value="I">Добавление</option><option value="U">Обновление</option><option value="D">Удаление</option></select>
+          <select id="aud-tbl" onchange="loadAudit()" aria-label="Таблица"><option value="">Все таблицы</option><option value="equipment">equipment</option><option value="maintenance_tasks">maintenance_tasks</option></select>
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th>№</th><th>Схема и таблица</th><th>Операция</th><th>ID записи</th><th>Пользователь</th><th>Время</th><th class="r">Детали</th></tr></thead>
+          <tbody id="aud-tbody"><tr><td colspan="7"><div class="empty"><div class="spin"></div></div></td></tr></tbody>
+        </table></div>
+        <div class="pag" id="aud-pag"></div>
+      </section>
+    </div>
+
+    <!-- ══ СОТРУДНИКИ ══ -->
+    <div class="page" id="page-employees">
+      <div class="sh"><h1 class="st">Реестр сотрудников</h1><div id="emp-add-btn"></div></div>
+      <section class="panel"><div class="tw"><table>
+        <thead><tr><th>ФИО</th><th>Роль</th><th>Электронная почта</th><th>Отдел</th><th>Статус</th><th>Дата создания</th></tr></thead>
+        <tbody id="emp-tbody"><tr><td colspan="6"><div class="empty"><div class="spin"></div></div></td></tr></tbody>
+      </table></div></section>
+    </div>
+
+    <!-- ══ МАТРИЦА ПРАВ ══ -->
+    <div class="page" id="page-roles">
+      <div class="sh"><h1 class="st">Матрица прав доступа</h1></div>
+      <section class="panel"><div class="tw"><table>
+        <thead><tr><th>Ресурс</th><th class="c">Администратор</th><th class="c">Инженер</th><th class="c">Кладовщик</th><th class="c">Аудитор</th><th class="c">Наблюдатель</th></tr></thead>
+        <tbody id="role-tbody"></tbody>
+      </table></div></section>
+      <div class="g3">
+        <div class="kc"><div class="kc-lbl strong">Администратор</div><p class="role-desc">Полный доступ ко всем функциям системы. Управляет персоналом, ролями и конфигурацией.</p></div>
+        <div class="kc"><div class="kc-lbl strong">Инженер</div><p class="role-desc">Обновляет статусы оборудования, записывает телеметрию, управляет задачами ТО.</p></div>
+        <div class="kc"><div class="kc-lbl strong">Кладовщик</div><p class="role-desc">Полный контроль инвентаря: приёмка, перемещение, списание оборудования.</p></div>
+        <div class="kc"><div class="kc-lbl strong">Аудитор</div><p class="role-desc">Чтение всех данных, включая финансы и журнал аудита. Только просмотр.</p></div>
+        <div class="kc"><div class="kc-lbl strong">Наблюдатель</div><p class="role-desc">Минимальный доступ: список оборудования и телеметрия.</p></div>
+      </div>
+    </div>
+
+  </main><!-- /content -->
+</div><!-- /main -->
+
+<div id="toasts"></div>
+
+<!-- MODALS -->
+<div class="ov" id="ov-eq"><div class="modal" role="dialog" aria-labelledby="eq-mt">
+  <div class="mh"><h2 class="mt" id="eq-mt">Добавить оборудование</h2><button class="icon-btn" onclick="closeOv('ov-eq')" aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+  <div class="mb">
+    <input type="hidden" id="eq-id"/>
+    <div class="fr"><div class="fg"><label for="eq-name">Наименование *</label><input id="eq-name" placeholder="CNC-A102"/></div><div class="fg"><label for="eq-sn">Серийный номер *</label><input id="eq-sn" placeholder="SN-CNC-003"/></div></div>
+    <div class="fr"><div class="fg"><label for="eq-inv">Инвентарный номер</label><input id="eq-inv" placeholder="INV-2024-0013"/></div><div class="fg"><label for="eq-tp-sel">Тип оборудования *</label><select id="eq-tp-sel"></select></div></div>
+    <div class="fr"><div class="fg"><label for="eq-loc-sel">Расположение</label><select id="eq-loc-sel"><option value="">Не задано</option></select></div><div class="fg"><label for="eq-resp-sel">Ответственный</label><select id="eq-resp-sel"><option value="">Не задано</option></select></div></div>
+    <div class="fr"><div class="fg"><label for="eq-st-sel">Статус</label><select id="eq-st-sel"><option value="active">Активное</option><option value="maintenance">На обслуживании</option><option value="requires_maintenance">Требует ТО</option><option value="in_repair">В ремонте</option><option value="storage">На складе</option><option value="decommissioned">Списано</option></select></div><div class="fg"><label for="eq-date">Дата закупки *</label><input type="date" id="eq-date"/></div></div>
+    <div class="fr"><div class="fg"><label for="eq-cost">Закупочная стоимость, ₽ *</label><input type="number" id="eq-cost" placeholder="150000" min="0"/></div><div class="fg"><label for="eq-res">Остаточная стоимость, ₽</label><input type="number" id="eq-res" placeholder="90000" min="0"/></div></div>
+    <div class="fg"><label for="eq-hrs">Моточасы</label><input type="number" id="eq-hrs" placeholder="0" min="0"/></div>
+  </div>
+  <div class="mf"><button class="btn btn-g" onclick="closeOv('ov-eq')">Отмена</button><button class="btn btn-p" onclick="saveEq()">Сохранить</button></div>
+</div></div>
+
+<div class="ov" id="ov-move"><div class="modal sm" role="dialog">
+  <div class="mh"><h2 class="mt">Переместить оборудование</h2><button class="icon-btn" onclick="closeOv('ov-move')" aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+  <div class="mb">
+    <input type="hidden" id="mv-id"/>
+    <div class="fg"><label for="mv-loc">Новое расположение *</label><select id="mv-loc"><option value="">Выберите локацию</option></select></div>
+    <div class="fg"><label for="mv-reason">Причина перемещения</label><input id="mv-reason" placeholder="Перевод в производственный цех"/></div>
+  </div>
+  <div class="mf"><button class="btn btn-g" onclick="closeOv('ov-move')">Отмена</button><button class="btn btn-p" onclick="confirmMove()">Переместить</button></div>
+</div></div>
+
+<div class="ov" id="ov-decomm"><div class="modal sm" role="dialog">
+  <div class="mh"><h2 class="mt">Списание оборудования</h2><button class="icon-btn" onclick="closeOv('ov-decomm')" aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+  <div class="mb">
+    <input type="hidden" id="dc-id"/>
+    <div class="note-crit">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+      <span>Это действие необратимо. Оборудование будет помечено как списанное, остаточная стоимость обнулится.</span>
+    </div>
+    <div class="fg"><label for="dc-reason">Причина списания *</label><textarea id="dc-reason" rows="3" placeholder="Истёк срок службы"></textarea></div>
+  </div>
+  <div class="mf"><button class="btn btn-g" onclick="closeOv('ov-decomm')">Отмена</button><button class="btn btn-d" onclick="confirmDecomm()">Списать</button></div>
+</div></div>
+
+<div class="ov" id="ov-task"><div class="modal" role="dialog" aria-labelledby="task-mt">
+  <div class="mh"><h2 class="mt" id="task-mt">Создать задачу</h2><button class="icon-btn" onclick="closeOv('ov-task')" aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+  <div class="mb">
+    <input type="hidden" id="task-id"/>
+    <div class="fr"><div class="fg"><label for="task-eq">Оборудование *</label><select id="task-eq"></select></div><div class="fg"><label for="task-tp-sel">Тип задачи *</label><select id="task-tp-sel"><option value="preventive">Плановое ТО</option><option value="corrective">Корректирующее</option><option value="inspection">Инспекция</option></select></div></div>
+    <div class="fr"><div class="fg"><label for="task-asgn">Исполнитель</label><select id="task-asgn"><option value="">Не назначен</option></select></div><div class="fg"><label for="task-st-sel">Статус</label><select id="task-st-sel"><option value="open">Открытая</option><option value="in_progress">В работе</option><option value="completed">Выполнена</option><option value="cancelled">Отменена</option></select></div></div>
+    <div class="fr"><div class="fg"><label for="task-sched">Запланировано *</label><input type="datetime-local" id="task-sched"/></div><div class="fg"><label for="task-cost">Затраты, ₽</label><input type="number" id="task-cost" placeholder="0" min="0"/></div></div>
+    <div class="fg"><label for="task-desc">Описание</label><textarea id="task-desc" rows="3" placeholder="Какие работы нужно выполнить"></textarea></div>
+  </div>
+  <div class="mf"><button class="btn btn-g" onclick="closeOv('ov-task')">Отмена</button><button class="btn btn-p" onclick="saveTask()">Сохранить</button></div>
+</div></div>
+
+<div class="ov" id="ov-loc"><div class="modal sm" role="dialog">
+  <div class="mh"><h2 class="mt">Добавить локацию</h2><button class="icon-btn" onclick="closeOv('ov-loc')" aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+  <div class="mb">
+    <div class="fg"><label for="loc-name">Название *</label><input id="loc-name" placeholder="Склад А"/></div>
+    <div class="fg"><label for="loc-addr">Адрес</label><input id="loc-addr" placeholder="Промышленная зона 1"/></div>
+    <div class="fg"><label for="loc-par">Вышестоящая локация</label><select id="loc-par"><option value="">Верхний уровень</option></select></div>
+  </div>
+  <div class="mf"><button class="btn btn-g" onclick="closeOv('ov-loc')">Отмена</button><button class="btn btn-p" onclick="saveLoc()">Сохранить</button></div>
+</div></div>
+
+<div class="ov" id="ov-aud"><div class="modal lg" role="dialog">
+  <div class="mh"><h2 class="mt">Запись аудита</h2><button class="icon-btn" onclick="closeOv('ov-aud')" aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+  <div class="mb" id="aud-detail" style="padding-bottom:20px"></div>
+  <div class="mf"><button class="btn btn-g" onclick="closeOv('ov-aud')">Закрыть</button></div>
+</div></div>
+
+<script>
+// Демо-режим: подменяет FastAPI-бэкенд данными в памяти, чтобы SPA открывалась как обычный файл.
+// Данные взяты из app/seed.py и сбрасываются при перезагрузке страницы.
+(() => {
+  'use strict';
+
+  const now   = Date.now();
+  const iso   = ms => new Date(ms).toISOString();
+  const days  = n => n * 86400000;
+  const hours = n => n * 3600000;
+  let seq = 1000;
+  const uid = p => `${p}-${(++seq).toString(16)}`;
+
+  // ── Справочники ─────────────────────────────────────────────
+  const DEPTS = ['IT Department', 'Production', 'Warehouse', 'Finance', 'Quality Control']
+    .map((name, i) => ({ id: `d${i + 1}`, name }));
+
+  const USERS = [
+    ['u1', 'Aleksei Petrov', 'admin@company.com',     'admin123', 'admin',       'd1', true],
+    ['u2', 'Maria Sokolova', 'engineer@company.com',  'eng123',   'engineer',    'd2', true],
+    ['u3', 'Ivan Kozlov',    'store@company.com',     'store123', 'storekeeper', 'd3', true],
+    ['u4', 'Olga Novikova',  'auditor@company.com',   'audit123', 'auditor',     'd4', true],
+    ['u5', 'Dmitry Volkov',  'viewer@company.com',    'view123',  'viewer',      'd5', true],
+    ['u6', 'Anna Lebedeva',  'engineer2@company.com', 'eng123',   'engineer',    'd2', false],
+  ].map(([id, full_name, email, password, role, department_id, is_active]) =>
+    ({ id, full_name, email, password, role, department_id, is_active, created_at: '2026-04-28T09:00:00Z' }));
+
+  const PERMISSIONS = {
+    admin:       { equipment: ['read', 'write', 'update', 'move', 'decommission'], telemetry: ['read'], maintenance: ['read', 'write'], audit: ['read'], employees: ['read', 'write'], costs: ['read'], locations: ['read'] },
+    engineer:    { equipment: ['read', 'update'], telemetry: ['read', 'write'], maintenance: ['read', 'write'], audit: [], employees: [], costs: [], locations: ['read'] },
+    storekeeper: { equipment: ['read', 'write', 'move'], telemetry: [], maintenance: ['read'], audit: [], employees: [], costs: [], locations: ['read', 'write'] },
+    auditor:     { equipment: ['read'], telemetry: ['read'], maintenance: ['read'], audit: ['read'], employees: ['read'], costs: ['read'], locations: ['read'] },
+    viewer:      { equipment: ['read'], telemetry: ['read'], maintenance: ['read'], audit: [], employees: [], costs: [], locations: ['read'] },
+  };
+
+  const TYPES = [
+    ['t1', 'CNC Machine', 500, 10], ['t2', 'Industrial Generator', 1000, 15], ['t3', 'Forklift', 250, 7],
+    ['t4', 'Air Compressor', 2000, 8], ['t5', 'Server', 8760, 5], ['t6', 'Conveyor Belt', 750, 12],
+  ].map(([id, name, maintenance_interval_hours, depreciation_years]) => ({ id, name, maintenance_interval_hours, depreciation_years }));
+
+  const LOCS = [
+    { id: 'l1', name: 'Main Warehouse',  address: 'Industrial Zone 1, Building A', parent_location_id: null },
+    { id: 'l2', name: 'Production Hall', address: 'Industrial Zone 1, Building B', parent_location_id: null },
+    { id: 'l3', name: 'Server Room',     address: 'HQ, Floor 3',                   parent_location_id: null },
+    { id: 'l4', name: 'Garage',          address: 'Industrial Zone 2',             parent_location_id: null },
+    { id: 'l5', name: 'Storage Area B',  address: 'Industrial Zone 1, Building A', parent_location_id: 'l1' },
+  ];
+
+  const typeName = id => TYPES.find(t => t.id === id)?.name || null;
+  const locName  = id => LOCS.find(l => l.id === id)?.name || null;
+
+  // ── Оборудование ────────────────────────────────────────────
+  const EQ = [
+    ['CNC-A100', 'SN-CNC-001', 't1', 'l2', 'active',               150000, 3420, 1],
+    ['CNC-A101', 'SN-CNC-002', 't1', 'l2', 'in_repair',            150000, 4815, 2],
+    ['GEN-5000', 'SN-GEN-001', 't2', 'l1', 'active',               320000, 1288, 3],
+    ['FORK-01',  'SN-FRK-001', 't3', 'l4', 'active',                85000, 2104, 4],
+    ['FORK-02',  'SN-FRK-002', 't3', 'l4', 'requires_maintenance',  85000, 2650, 5],
+    ['COMP-200', 'SN-CMP-001', 't4', 'l2', 'active',                64000, 1930, 6],
+    ['COMP-201', 'SN-CMP-002', 't4', 'l2', 'maintenance',           64000, 2275, 7],
+    ['SRV-R01',  'SN-SRV-001', 't5', 'l3', 'active',               410000, 8120, 8],
+    ['SRV-R02',  'SN-SRV-002', 't5', 'l5', 'storage',              410000,    0, 9],
+    ['CONV-L1',  'SN-CNV-001', 't6', 'l2', 'active',               210000, 3890, 10],
+    ['CONV-L2',  'SN-CNV-002', 't6', 'l2', 'active',               210000, 3512, 11],
+    ['GEN-3000', 'SN-GEN-002', 't2', 'l1', 'decommissioned',       280000, 9640, 12],
+  ].map(([name, serial_number, equipment_type_id, location_id, status, cost, operation_hours, i]) => ({
+    id: `e${i}`, name, serial_number, inventory_number: `INV-2024-${String(i).padStart(4, '0')}`,
+    equipment_type_id, equipment_type_name: typeName(equipment_type_id),
+    location_id, location_name: locName(location_id), responsible_employee_id: 'u2',
+    status, purchase_cost: cost, residual_value: status === 'decommissioned' ? 0 : Math.round(cost * 0.6),
+    purchase_date: '2022-01-01', operation_hours, characteristics: { demo: true },
+    created_at: '2026-04-28T09:00:00Z', updated_at: iso(now - hours(i * 7)),
+  }));
+
+  // ── Задачи ТО ───────────────────────────────────────────────
+  const TASKS = [
+    ['e5',  'preventive', 'open',        'u2', +2,  null, 0,     'Плановое ТО: замена масла и фильтров'],
+    ['e2',  'corrective', 'in_progress', 'u2', -1,  null, 0,     'Замена подшипника шпинделя'],
+    ['e7',  'preventive', 'in_progress', 'u6', -2,  null, 0,     'Проверка клапанов и ресиверов'],
+    ['e1',  'inspection', 'open',        null, +4,  null, 0,     'Осмотр направляющих и смазки'],
+    ['e3',  'preventive', 'open',        'u2', +6,  null, 0,     'ТО генератора по моточасам'],
+    ['e10', 'inspection', 'open',        null, +8,  null, 0,     'Проверка натяжения ленты'],
+    ['e8',  'preventive', 'in_progress', 'u2', -3,  null, 0,     'Чистка и замена термопасты'],
+    ['e4',  'corrective', 'open',        'u6', +1,  null, 0,     'Диагностика АКБ'],
+    ['e11', 'preventive', 'in_progress', 'u6', -1,  null, 0,     'Замена приводного ремня'],
+    ['e6',  'preventive', 'completed',   'u2', -9,  -2,  18500, 'Замена воздушного фильтра'],
+    ['e1',  'corrective', 'completed',   'u2', -12, -1,  42000, 'Ремонт системы охлаждения'],
+    ['e4',  'preventive', 'completed',   'u6', -8,  -1,  12400, 'Плановое ТО погрузчика'],
+    ['e3',  'inspection', 'completed',   'u2', -6,  -2,  6800,  'Инспекция топливной системы'],
+    ['e10', 'preventive', 'completed',   'u6', -5,  -1,  15200, 'Смазка роликов'],
+    ['e8',  'inspection', 'completed',   'u2', -4,  -1,  4300,  'Проверка ИБП'],
+    ['e11', 'corrective', 'completed',   'u6', -3,  -0.5, 27900, 'Замена датчика скорости'],
+    ['e9',  'preventive', 'cancelled',   null, -20, null, 0,    'Отменено: оборудование на складе'],
+  ].map(([equipment_id, task_type, status, assigned_to, sched, done, cost, description], i) => ({
+    id: `k${i + 1}`, equipment_id, task_type, status, assigned_to, description, cost,
+    scheduled_at: iso(now + days(sched)), completed_at: done == null ? null : iso(now + days(done)),
+    created_at: iso(now + days(sched - 3)),
+  }));
+
+  const taskOut = t => ({
+    ...t,
+    equipment_name: EQ.find(e => e.id === t.equipment_id)?.name || null,
+    assigned_name:  USERS.find(u => u.id === t.assigned_to)?.full_name || null,
+  });
+
+  // ── Журнал аудита ───────────────────────────────────────────
+  const AUDIT = [];
+  let auditSeq = 0;
+  const pick = (o, keys) => Object.fromEntries(keys.map(k => [k, o[k]]));
+  const AUD_KEYS = ['name', 'serial_number', 'status', 'location_id', 'operation_hours', 'purchase_cost', 'residual_value'];
+  function audit(table, op, recordId, oldData, newData, userId, at = Date.now()) {
+    AUDIT.unshift({
+      id: ++auditSeq, schema_name: table === 'equipment' ? 'inventory' : 'monitoring', table_name: table,
+      record_id: recordId, operation: op, old_data: oldData, new_data: newData, user_id: userId, performed_at: iso(at),
+    });
+  }
+  EQ.forEach((e, i) => audit('equipment', 'I', e.id, null, pick(e, AUD_KEYS), 'u3', now - days(30) + hours(i)));
+  audit('equipment', 'U', 'e2', { ...pick(EQ[1], AUD_KEYS), status: 'active' }, pick(EQ[1], AUD_KEYS), 'u2', now - days(2));
+  audit('equipment', 'U', 'e5', { ...pick(EQ[4], AUD_KEYS), status: 'active' }, pick(EQ[4], AUD_KEYS), 'u2', now - days(1));
+  audit('equipment', 'U', 'e12', { ...pick(EQ[11], AUD_KEYS), status: 'active', residual_value: 168000 }, pick(EQ[11], AUD_KEYS), 'u1', now - days(5));
+  TASKS.slice(9, 13).forEach(t => audit('maintenance_tasks', 'U', t.id, { status: 'in_progress', cost: 0 }, { status: 'completed', cost: t.cost }, t.assigned_to, Date.parse(t.completed_at)));
+  AUDIT.sort((a, b) => Date.parse(b.performed_at) - Date.parse(a.performed_at));
+  AUDIT.forEach((a, i) => { a.id = AUDIT.length - i; });
+  auditSeq = AUDIT.length;
+
+  // ── Телеметрия: стабильный ряд для пары оборудование + метрика ──
+  function rng(seed) {
+    let s = 0;
+    for (const c of seed) s = (s * 31 + c.charCodeAt(0)) >>> 0;
+    return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  }
+  function metricRange(eq, name) {
+    const cfg = typeof window.getMetricsForEquipment === 'function'
+      ? window.getMetricsForEquipment(eq).find(m => m.name === name) : null;
+    return cfg ? { min: cfg.min, max: cfg.max } : { min: 20, max: 80 };
+  }
+  const METRICS = {
+    t1: ['spindle_rpm', 'temperature_c', 'vibration_mm_s'], t2: ['output_kw', 'fuel_level_pct', 'coolant_temp_c'],
+    t3: ['battery_pct', 'load_kg', 'speed_kmh'], t4: ['pressure_bar', 'temperature_c', 'flow_m3_min'],
+    t5: ['cpu_pct', 'ram_pct', 'temperature_c'], t6: ['belt_speed_m_min', 'motor_load_pct', 'motor_temp_c'],
+  };
+  function series(eqId, metric, hrs) {
+    const eq = EQ.find(e => e.id === eqId);
+    if (!eq) return [];
+    const { min, max } = metricRange(eq, metric);
+    const span = max - min, center = min + span * 0.5;
+    const step = hrs <= 24 ? 15 : hrs <= 72 ? 30 : 60;  // минуты между точками
+    const n = Math.round(hrs * 60 / step);
+    const r = rng(`${eqId}:${metric}`);
+    const ph1 = r() * 6, ph2 = r() * 6;
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const t = now - (n - i) * step * 60000;
+      const k = t / 3600000;  // часы: форма ряда не зависит от выбранного периода
+      let v = center + span * (0.22 * Math.sin(k / 3.8 + ph1) + 0.1 * Math.sin(k / 1.1 + ph2) + (r() - 0.5) * 0.04);
+      out.push({ timestamp: iso(t), value: +Math.max(min, Math.min(max, v)).toFixed(4) });
+    }
+    return out;
+  }
+
+  // ── HTTP-слой ───────────────────────────────────────────────
+  const json = (status, body) => new Response(status === 204 ? null : JSON.stringify(body), {
+    status, headers: { 'Content-Type': 'application/json' },
+  });
+  const fail = (status, detail) => json(status, { detail });
+  const page = (list, q, per = 20) => {
+    const p = Math.max(1, +(q.get('page') || 1));
+    const pp = Math.max(1, +(q.get('per_page') || per));
+    return { items: list.slice((p - 1) * pp, p * pp), total: list.length, page: p, per_page: pp };
+  };
+
+  function userFrom(headers) {
+    const h = headers instanceof Headers ? headers.get('Authorization') : (headers?.Authorization || headers?.authorization);
+    const id = (h || '').replace(/^Bearer demo\./, '');
+    return USERS.find(u => u.id === id && u.is_active) || null;
+  }
+  const can = (user, res, act) => (PERMISSIONS[user.role]?.[res] || []).includes(act);
+  const publicUser = u => ({ id: u.id, full_name: u.full_name, email: u.email, role: u.role, department_id: u.department_id, is_active: u.is_active, created_at: u.created_at });
+
+  function handle(method, url, body, headers) {
+    const p = url.pathname, q = url.searchParams;
+
+    if (p === '/api/auth/login' && method === 'POST') {
+      const u = USERS.find(x => x.email === body?.email && x.password === body?.password);
+      if (!u || !u.is_active) return fail(401, 'Неверный email или пароль');
+      return json(200, { access_token: `demo.${u.id}`, token_type: 'bearer', ...publicUser(u) });
+    }
+
+    const me = userFrom(headers);
+    if (!me) return fail(401, 'Требуется авторизация');
+
+    if (p === '/api/auth/me') return json(200, publicUser(me));
+    if (p === '/api/auth/permissions') return json(200, PERMISSIONS);
+
+    // Справочники
+    if (p === '/api/equipment/types') return json(200, TYPES);
+    if (p === '/api/equipment/locations' && method === 'GET') return json(200, LOCS);
+    if (p === '/api/equipment/locations' && method === 'POST') {
+      if (!can(me, 'locations', 'write') && me.role !== 'admin') return fail(403, 'Недостаточно прав');
+      const loc = { id: uid('l'), name: body.name, address: body.address || null, parent_location_id: body.parent_location_id || null };
+      LOCS.push(loc);
+      return json(200, loc);
+    }
+
+    // Оборудование
+    if (p === '/api/equipment' && method === 'GET') {
+      const s = (q.get('search') || '').toLowerCase(), st = q.get('status'), tp = q.get('type_id');
+      const list = EQ.filter(e =>
+        (!s || [e.name, e.serial_number, e.inventory_number].some(v => (v || '').toLowerCase().includes(s))) &&
+        (!st || e.status === st) && (!tp || e.equipment_type_id === tp));
+      return json(200, page(list, q, 20));
+    }
+    if (p === '/api/equipment' && method === 'POST') {
+      if (!can(me, 'equipment', 'write')) return fail(403, 'Недостаточно прав');
+      if (EQ.some(e => e.serial_number === body.serial_number)) return fail(400, 'Оборудование с таким серийным номером уже есть');
+      const e = {
+        id: uid('e'), name: body.name, serial_number: body.serial_number, inventory_number: body.inventory_number || null,
+        equipment_type_id: body.equipment_type_id, equipment_type_name: typeName(body.equipment_type_id),
+        location_id: body.location_id || null, location_name: locName(body.location_id),
+        responsible_employee_id: body.responsible_employee_id || null, status: body.status || 'active',
+        purchase_cost: +body.purchase_cost, residual_value: body.residual_value ?? null, purchase_date: body.purchase_date,
+        operation_hours: body.operation_hours || 0, characteristics: {}, created_at: iso(Date.now()), updated_at: iso(Date.now()),
+      };
+      EQ.unshift(e);
+      audit('equipment', 'I', e.id, null, pick(e, AUD_KEYS), me.id);
+      return json(201, e);
+    }
+    let m = p.match(/^\/api\/equipment\/([^/]+)(\/move|\/decommission)?$/);
+    if (m) {
+      const e = EQ.find(x => x.id === m[1]);
+      if (!e) return fail(404, 'Оборудование не найдено');
+      if (method === 'GET') return json(200, e);
+      const before = pick(e, AUD_KEYS);
+      if (m[2] === '/move') {
+        if (!can(me, 'equipment', 'move')) return fail(403, 'Недостаточно прав');
+        e.location_id = body.location_id; e.location_name = locName(body.location_id);
+      } else if (m[2] === '/decommission') {
+        if (!can(me, 'equipment', 'decommission')) return fail(403, 'Недостаточно прав');
+        e.status = 'decommissioned'; e.residual_value = 0;
+      } else if (method === 'PATCH') {
+        if (!can(me, 'equipment', 'update') && !can(me, 'equipment', 'write')) return fail(403, 'Недостаточно прав');
+        Object.assign(e, body);
+        e.location_name = locName(e.location_id);
+      }
+      e.updated_at = iso(Date.now());
+      audit('equipment', 'U', e.id, before, pick(e, AUD_KEYS), me.id);
+      return json(200, e);
+    }
+
+    // Сводка
+    if (p === '/api/dashboard/stats') {
+      const by = (list, key) => list.reduce((a, x) => (a[x[key]] = (a[x[key]] || 0) + 1, a), {});
+      const byStatus = by(EQ, 'status');
+      const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
+      return json(200, {
+        total_equipment: EQ.length, active_equipment: byStatus.active || 0, in_repair: byStatus.in_repair || 0,
+        requires_maintenance: byStatus.requires_maintenance || 0, decommissioned: byStatus.decommissioned || 0,
+        open_tasks: TASKS.filter(t => t.status === 'open').length,
+        in_progress_tasks: TASKS.filter(t => t.status === 'in_progress').length,
+        completed_tasks_month: TASKS.filter(t => t.status === 'completed' && Date.parse(t.completed_at) >= monthStart).length,
+        total_purchase_value: EQ.reduce((a, e) => a + (+e.purchase_cost || 0), 0),
+        total_residual_value: EQ.reduce((a, e) => a + (+e.residual_value || 0), 0),
+        equipment_by_status: byStatus,
+        equipment_by_type: EQ.reduce((a, e) => (a[e.equipment_type_name] = (a[e.equipment_type_name] || 0) + 1, a), {}),
+        tasks_by_type: by(TASKS, 'task_type'),
+        recent_telemetry_metrics: [],
+      });
+    }
+
+    // Обслуживание
+    if (p === '/api/maintenance/stats') {
+      const by = key => TASKS.reduce((a, t) => (a[t[key]] = (a[t[key]] || 0) + 1, a), {});
+      return json(200, { by_status: by('status'), by_type: by('task_type'),
+        total_completed_cost: TASKS.filter(t => t.status === 'completed').reduce((a, t) => a + t.cost, 0) });
+    }
+    if (p === '/api/maintenance' && method === 'GET') {
+      const st = q.get('status'), tp = q.get('task_type');
+      const list = TASKS.filter(t => (!st || t.status === st) && (!tp || t.task_type === tp))
+        .sort((a, b) => Date.parse(b.scheduled_at) - Date.parse(a.scheduled_at)).map(taskOut);
+      return json(200, page(list, q, 20));
+    }
+    if (p === '/api/maintenance' && method === 'POST') {
+      if (!can(me, 'maintenance', 'write')) return fail(403, 'Недостаточно прав');
+      const t = { id: uid('k'), equipment_id: body.equipment_id, task_type: body.task_type, status: body.status || 'open',
+        assigned_to: body.assigned_to || null, description: body.description || null, cost: +body.cost || 0,
+        scheduled_at: body.scheduled_at, completed_at: body.status === 'completed' ? iso(Date.now()) : null, created_at: iso(Date.now()) };
+      TASKS.unshift(t);
+      audit('maintenance_tasks', 'I', t.id, null, { status: t.status, task_type: t.task_type, cost: t.cost }, me.id);
+      return json(201, taskOut(t));
+    }
+    m = p.match(/^\/api\/maintenance\/([^/]+)$/);
+    if (m) {
+      const t = TASKS.find(x => x.id === m[1]);
+      if (!t) return fail(404, 'Задача не найдена');
+      if (method === 'GET') return json(200, taskOut(t));
+      if (!can(me, 'maintenance', 'write')) return fail(403, 'Недостаточно прав');
+      const before = { status: t.status, cost: t.cost };
+      Object.assign(t, body);
+      if (t.status === 'completed' && !t.completed_at) t.completed_at = iso(Date.now());
+      audit('maintenance_tasks', 'U', t.id, before, { status: t.status, cost: t.cost }, me.id);
+      return json(200, taskOut(t));
+    }
+
+    // Телеметрия
+    if (p === '/api/telemetry/batch') return json(201, { inserted: Array.isArray(body) ? body.length : 0 });
+    if (p === '/api/telemetry/metrics') {
+      const e = EQ.find(x => x.id === q.get('equipment_id'));
+      return json(200, e ? METRICS[e.equipment_type_id] || [] : []);
+    }
+    if (p === '/api/telemetry/chart') {
+      return json(200, { equipment_id: q.get('equipment_id'), metric_name: q.get('metric_name'),
+        points: series(q.get('equipment_id'), q.get('metric_name'), +(q.get('hours') || 24)) });
+    }
+    if (p === '/api/telemetry/summary') {
+      const pts = series(q.get('equipment_id'), q.get('metric_name'), +(q.get('hours') || 24)).map(x => x.value);
+      if (!pts.length) return json(200, { min: null, max: null, avg: null, count: 0 });
+      return json(200, { min: Math.min(...pts), max: Math.max(...pts), avg: pts.reduce((a, v) => a + v, 0) / pts.length, count: pts.length });
+    }
+
+    // Аудит, сотрудники, отделы
+    if (p === '/api/audit') {
+      if (!can(me, 'audit', 'read')) return fail(403, 'Недостаточно прав');
+      const op = q.get('operation'), tb = q.get('table_name');
+      return json(200, page(AUDIT.filter(a => (!op || a.operation === op) && (!tb || a.table_name === tb)), q, 20));
+    }
+    if (p === '/api/employees') {
+      if (!can(me, 'employees', 'read')) return fail(403, 'Недостаточно прав');
+      return json(200, USERS.map(publicUser));
+    }
+    if (p === '/api/departments') return json(200, DEPTS);
+
+    return fail(404, `Нет такого метода в демо: ${method} ${p}`);
+  }
+
+  const realFetch = window.fetch.bind(window);
+  window.fetch = async (input, init = {}) => {
+    const url = new URL(typeof input === 'string' ? input : input.url, 'http://demo.local');
+    if (!url.pathname.startsWith('/api/')) return realFetch(input, init);
+    const method = (init.method || 'GET').toUpperCase();
+    let body = null;
+    try { body = init.body ? JSON.parse(init.body) : null; } catch {}
+    await new Promise(r => setTimeout(r, 120));
+    try {
+      return handle(method, url, body, init.headers);
+    } catch (e) {
+      return fail(500, e.message);
+    }
+  };
+})();
+
+</script>
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+const API = '';
+let token = localStorage.getItem('ems_token');
+let currentUser = null;
+const PAGES = { eq: 1, task: 1, aud: 1 };
+const CHARTS = {};
+let cachedTypes = [], cachedLocs = [], cachedEmps = [], cachedEq = [];
+const EQ_STORE = {}, TASK_STORE = {}, AUD_STORE = {};
+
+// ═══════════════════════════════════════════════════════════════
+// NOTIFICATIONS STATE
+// ═══════════════════════════════════════════════════════════════
+let notifications = [];        // {id, type:'hi'|'lo', eqId, equipName, metric, value, threshold, unit, ts, acked}
+let notifIdSeq = 0;
+const NOTIF_COOLDOWN = {};     // key: eqId+metric → timestamp of last notification
+const NOTIF_COOLDOWN_MS = 30000; // 30 seconds cooldown per sensor per alert type
+const MAX_NOTIFICATIONS = 200;
+
+function addNotification(s, type) {
+  const key = `${s.eqId}_${s.metric.name}_${type}`;
+  const now = Date.now();
+  if (NOTIF_COOLDOWN[key] && now - NOTIF_COOLDOWN[key] < NOTIF_COOLDOWN_MS) return;
+  NOTIF_COOLDOWN[key] = now;
+
+  const threshold = type === 'hi' ? s.metric.warn_hi : s.metric.warn_lo;
+  const notif = {
+    id:        ++notifIdSeq,
+    type,
+    eqId:      s.eqId,
+    equipName: s.equipName,
+    metricLabel: s.metric.label,
+    metricName:  s.metric.name,
+    value:     +s.value.toFixed(3),
+    threshold,
+    dec:       sensorDec(s.metric),
+    unit:      s.metric.unit,
+    ts:        now,
+    acked:     false,
+  };
+  notifications.unshift(notif);
+  if (notifications.length > MAX_NOTIFICATIONS) notifications.pop();
+
+  updateNotifBadges();
+
+  // Show toast for critical
+  if (type === 'hi') {
+    toastNotif(notif);
+  }
+}
+
+function updateNotifBadges() {
+  const unacked = notifications.filter(n => !n.acked);
+  const hiCnt   = unacked.filter(n => n.type === 'hi').length;
+  const loCnt   = unacked.filter(n => n.type === 'lo').length;
+  const total   = unacked.length;
+
+  // Sidebar badge
+  const nbNotif = document.getElementById('nb-notif');
+  if (nbNotif) {
+    if (total > 0) {
+      nbNotif.style.display = '';
+      nbNotif.textContent   = total > 99 ? '99+' : total;
+    } else {
+      nbNotif.style.display = 'none';
+    }
+  }
+
+  // Topbar bell
+  const tbBtn   = document.getElementById('tb-notif-btn');
+  const tbBadge = document.getElementById('tb-notif-badge');
+  if (tbBtn) {
+    tbBtn.classList.toggle('has-alerts', total > 0);
+  }
+  if (tbBadge) {
+    if (total > 0) {
+      tbBadge.style.display = '';
+      tbBadge.textContent   = total > 99 ? '99+' : total;
+    } else {
+      tbBadge.style.display = 'none';
+    }
+  }
+  if (tbBtn) tbBtn.setAttribute('aria-label', total > 0 ? `Уведомления: ${total} непрочитанных` : 'Уведомления');
+
+  // Dashboard tab badge
+  const dtBadge = document.getElementById('dash-tab-notif-badge');
+  if (dtBadge) {
+    dtBadge.textContent = total > 99 ? '99+' : total;
+    dtBadge.classList.toggle('zero', total === 0);
+  }
+
+  // Notif stats
+  const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  setEl('ns-hi-cnt',    hiCnt);
+  setEl('ns-lo-cnt',    loCnt);
+  setEl('ns-total-cnt', notifications.length);
+
+  // Summary text
+  const sumEl = document.getElementById('notif-summary');
+  if (sumEl) {
+    sumEl.textContent = unacked.length > 0
+      ? `${unacked.length} ${plural(unacked.length, ['непрочитанное', 'непрочитанных', 'непрочитанных'])}`
+      : 'все подтверждены';
+  }
+}
+
+function toastNotif(n) {
+  const el = document.createElement('div');
+  el.className = 'toast t-err has-ico';
+  el.innerHTML = `${ico('alert')}
+    <span><span class="mono">${escHtml(n.equipName)}</span> · ${escHtml(n.metricLabel)}: ${fmtN(n.value, n.dec)} ${escHtml(n.unit)}, порог ${fmtN(n.threshold, n.dec)}</span>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 5000);
+}
+
+function renderNotifications() {
+  const filterType = document.getElementById('notif-filter-type')?.value || '';
+  const filterAck  = document.getElementById('notif-filter-ack')?.value;
+
+  let list = [...notifications];
+  if (filterType) list = list.filter(n => n.type === filterType);
+  if (filterAck === 'unread') list = list.filter(n => !n.acked);
+  if (filterAck === 'ack')    list = list.filter(n => n.acked);
+
+  const wrap = document.getElementById('notif-list-wrap');
+  if (!wrap) return;
+
+  if (!list.length) {
+    wrap.innerHTML = notifications.length === 0
+      ? `<div class="notif-empty">${ico('bellOff')}<b>Уведомлений нет</b><span>Пороговые значения не превышены</span></div>`
+      : `<div class="notif-empty">${ico('check')}<b>Пусто</b><span>Нет уведомлений по выбранному фильтру</span></div>`;
+    return;
+  }
+
+  wrap.innerHTML = `<div class="notif-list">${list.map(n => {
+    const isHi = n.type === 'hi';
+    const val  = `<span class="num">${fmtN(n.value, n.dec)} ${escHtml(n.unit)}</span>`;
+    const thr  = `${fmtN(n.threshold, n.dec)} ${escHtml(n.unit)}`;
+    return `
+      <div class="notif-card ${isHi ? 'notif-hi' : 'notif-lo'}${n.acked ? ' notif-ack' : ''}" id="notif-card-${n.id}">
+        <div class="notif-icon">${ico(isHi ? 'alert' : 'arrowDown')}</div>
+        <div class="notif-body">
+          <div class="notif-title"><span class="plate">${escHtml(n.equipName)}</span>${escHtml(n.metricLabel)}</div>
+          <div class="notif-meta">${isHi ? 'Выше порога' : 'Ниже минимума'}: ${val} при пороге ${thr}</div>
+        </div>
+        <div class="notif-side">
+          <div class="notif-time">${fmtRelTime(n.ts)}</div>
+          ${!n.acked
+            ? `<button class="btn btn-g btn-sm" onclick="ackNotif(${n.id})">Подтвердить</button>`
+            : `<span class="notif-done">Подтверждено</span>`}
+        </div>
+      </div>`;
+  }).join('')}</div>`;
+}
+
+function ackNotif(id) {
+  const n = notifications.find(x => x.id === id);
+  if (n) { n.acked = true; }
+  updateNotifBadges();
+  renderNotifications();
+}
+
+function ackAllNotifs() {
+  notifications.forEach(n => n.acked = true);
+  updateNotifBadges();
+  renderNotifications();
+  toast('Все уведомления подтверждены', 'success');
+}
+
+function clearAllNotifs() {
+  notifications = [];
+  Object.keys(NOTIF_COOLDOWN).forEach(k => delete NOTIF_COOLDOWN[k]);
+  updateNotifBadges();
+  renderNotifications();
+  toast('Уведомления очищены', 'info');
+}
+
+function fmtRelTime(ts) {
+  const diff = Math.floor((Date.now() - ts) / 1000);
+  if (diff < 10)  return 'только что';
+  if (diff < 60)  return `${diff} с назад`;
+  if (diff < 3600) return `${Math.floor(diff/60)} мин назад`;
+  if (diff < 86400) return `${Math.floor(diff/3600)} ч назад`;
+  return new Date(ts).toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DASHBOARD TABS
+// ═══════════════════════════════════════════════════════════════
+function switchDashTab(name) {
+  document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.dash-pane').forEach(p => p.classList.remove('active'));
+
+  const tab  = document.getElementById(`dtab-${name}`);
+  const pane = document.getElementById(`dpane-${name}`);
+  if (tab)  tab.classList.add('active');
+  if (pane) pane.classList.add('active');
+
+  if (name === 'notifications') {
+    renderNotifications();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// METRIC CONFIGS
+// ═══════════════════════════════════════════════════════════════
+const METRIC_CONFIGS = [
+  {
+    match: ['cnc','станок','фрезер','токарн'],
+    metrics: [
+      { name:'spindle_rpm',    label:'Обороты шпинделя',    unit:'об/мин', min:500,  max:8000, warn_hi:7500, warn_lo:600  },
+      { name:'temperature_c',  label:'Температура шпинделя',unit:'°C',     min:28,   max:95,   warn_hi:88,   warn_lo:null },
+      { name:'vibration_mm_s', label:'Вибрация',            unit:'мм/с',   min:0.05, max:6.5,  warn_hi:5.5,  warn_lo:null },
+    ],
+  },
+  {
+    match: ['generator','генератор','дизель'],
+    metrics: [
+      { name:'output_kw',      label:'Выходная мощность',   unit:'кВт',    min:50,   max:520,  warn_hi:500,  warn_lo:40   },
+      { name:'fuel_level_pct', label:'Уровень топлива',     unit:'%',      min:2,    max:100,  warn_hi:null, warn_lo:15   },
+      { name:'coolant_temp_c', label:'Тем-ра охлаждающей',  unit:'°C',     min:55,   max:125,  warn_hi:115,  warn_lo:50   },
+    ],
+  },
+  {
+    match: ['forklift','погрузчик','электрокар'],
+    metrics: [
+      { name:'battery_pct',    label:'Заряд АКБ',           unit:'%',      min:3,    max:100,  warn_hi:null, warn_lo:20   },
+      { name:'load_kg',        label:'Текущая нагрузка',    unit:'кг',     min:0,    max:2200, warn_hi:2000, warn_lo:null },
+      { name:'speed_kmh',      label:'Скорость',            unit:'км/ч',   min:0,    max:25,   warn_hi:22,   warn_lo:null },
+    ],
+  },
+  {
+    match: ['compressor','компрессор','пневмат'],
+    metrics: [
+      { name:'pressure_bar',   label:'Давление',            unit:'бар',    min:2,    max:13,   warn_hi:11.5, warn_lo:3    },
+      { name:'temperature_c',  label:'Температура',         unit:'°C',     min:22,   max:85,   warn_hi:78,   warn_lo:null },
+      { name:'flow_m3_min',    label:'Расход воздуха',      unit:'м³/мин', min:0.3,  max:5.5,  warn_hi:5.0,  warn_lo:0.2  },
+    ],
+  },
+  {
+    match: ['server','сервер','rack'],
+    metrics: [
+      { name:'cpu_pct',        label:'Загрузка ЦП',         unit:'%',      min:2,    max:100,  warn_hi:92,   warn_lo:null },
+      { name:'ram_pct',        label:'Загрузка RAM',        unit:'%',      min:10,   max:100,  warn_hi:90,   warn_lo:null },
+      { name:'temperature_c',  label:'Температура ЦП',      unit:'°C',     min:26,   max:82,   warn_hi:75,   warn_lo:null },
+    ],
+  },
+  {
+    match: ['conveyor','конвейер','лента'],
+    metrics: [
+      { name:'belt_speed_m_min',label:'Скорость ленты',     unit:'м/мин',  min:2,    max:65,   warn_hi:60,   warn_lo:2    },
+      { name:'motor_load_pct',  label:'Загрузка двигателя', unit:'%',      min:0,    max:100,  warn_hi:90,   warn_lo:null },
+      { name:'motor_temp_c',    label:'Тем-ра двигателя',   unit:'°C',     min:30,   max:100,  warn_hi:90,   warn_lo:null },
+    ],
+  },
+  {
+    match: ['__default__'],
+    metrics: [
+      { name:'temperature_c',  label:'Температура',         unit:'°C',     min:20,   max:80,   warn_hi:75,   warn_lo:null },
+      { name:'load_pct',       label:'Загрузка',            unit:'%',      min:0,    max:100,  warn_hi:95,   warn_lo:null },
+      { name:'vibration_mm_s', label:'Вибрация',            unit:'мм/с',   min:0,    max:5,    warn_hi:4.5,  warn_lo:null },
+    ],
+  },
+];
+
+function getMetricsForEquipment(eq) {
+  const haystack = ((eq.equipment_type_name||'') + ' ' + (eq.name||'')).toLowerCase();
+  for (const cfg of METRIC_CONFIGS) {
+    if (cfg.match[0] === '__default__') continue;
+    if (cfg.match.some(kw => haystack.includes(kw))) return cfg.metrics;
+  }
+  return METRIC_CONFIGS[METRIC_CONFIGS.length - 1].metrics;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SIMULATOR
+// ═══════════════════════════════════════════════════════════════
+let simSensors  = [];
+let simTimer    = null;
+let simRunning  = false;
+let simInterval = 2000;
+let simSentCount = 0;
+
+function initSimulator(equipList) {
+  simSensors = [];
+  let idx = 0;
+  const active = equipList.filter(e => !['decommissioned','storage'].includes(e.status));
+  for (const eq of active.slice(0, 8)) {
+    const metrics = getMetricsForEquipment(eq);
+    for (const m of metrics) {
+      const initVal = m.min + Math.random() * (m.max - m.min);
+      // History walks back from the current value with the drift model simTick uses,
+      // so the charts start from a plausible trace instead of noise
+      const rng = m.max - m.min, center = (m.max + m.min) / 2;
+      const history = [];
+      let v = initVal;
+      for (let i = 0; i < 60; i++) {
+        history.unshift({ t: Date.now() - (i + 1) * simInterval, v });
+        v = Math.max(m.min, Math.min(m.max, v + (center - v) * 0.01 + (Math.random() - 0.5) * 0.04 * rng));
+      }
+      simSensors.push({
+        idx, eqId: eq.id, equipName: eq.name, metric: m,
+        value: initVal,
+        history,
+        chartObj: null,
+      });
+      idx++;
+    }
+  }
+  startSimulator();
+  updateSimUI();
+}
+
+function simTick() {
+  const now = Date.now();
+  for (const s of simSensors) {
+    const m   = s.metric;
+    const rng = m.max - m.min;
+    const center = (m.max + m.min) / 2;
+    const drift  = (center - s.value) * 0.01 + (Math.random() - 0.5) * 0.04 * rng;
+    s.value = Math.max(m.min, Math.min(m.max, s.value + drift));
+    s.history.push({ t: now, v: s.value });
+    if (s.history.length > 120) s.history.shift();
+
+    // Threshold checks → notifications
+    if (m.warn_hi && s.value > m.warn_hi) addNotification(s, 'hi');
+    if (m.warn_lo && s.value < m.warn_lo) addNotification(s, 'lo');
+  }
+
+  const activePage = document.querySelector('.page.active')?.id;
+  if (activePage === 'page-telemetry') {
+    updateLiveCards();
+    updateLiveCharts();
+  }
+  if (activePage === 'page-dashboard') {
+    updateDashMini();
+  }
+
+  // If notifications pane is open, refresh relative times
+  const dpaneN = document.getElementById('dpane-notifications');
+  if (dpaneN?.classList.contains('active')) {
+    // Only refresh time labels, not full render
+    notifications.forEach(n => {
+      const tw = document.querySelector(`#notif-card-${n.id} .notif-time`);
+      if (tw) tw.textContent = fmtRelTime(n.ts);
+    });
+  }
+
+  sendTelemetryToApi();
+  simSentCount++;
+  updateSimUI();
+}
+
+async function sendTelemetryToApi() {
+  if (!token || simSensors.length === 0) return;
+  const batch = simSensors.map(s => ({
+    equipment_id: s.eqId,
+    metric_name:  s.metric.name,
+    value:        +s.value.toFixed(4),
+  }));
+  try {
+    const resp = await fetch(API + '/api/telemetry/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(batch),
+    });
+    if (!resp.ok) console.warn('Telemetry batch failed:', resp.status);
+  } catch {}
+}
+
+function startSimulator() {
+  if (simTimer) clearInterval(simTimer);
+  simTimer    = setInterval(simTick, simInterval);
+  simRunning  = true;
+  updateSimUI();
+}
+
+function stopSimulator() {
+  clearInterval(simTimer);
+  simTimer   = null;
+  simRunning = false;
+  updateSimUI();
+}
+
+function toggleSimulator() {
+  if (simRunning) stopSimulator(); else startSimulator();
+}
+
+function changeSimInterval() {
+  const sel = document.getElementById('tel-interval');
+  if (sel) simInterval = parseInt(sel.value, 10);
+  if (simRunning) startSimulator();
+  updateSimUI();
+}
+
+function updateSimUI() {
+  const dot   = document.getElementById('sdot');
+  const stTxt = document.getElementById('sim-status-txt');
+  const freqEl= document.getElementById('sim-freq-txt');
+  const btnTog= document.getElementById('sim-btn-toggle');
+  if (!dot) return;
+
+  const every = simInterval === 1000 ? 'каждую секунду' : `каждые ${simInterval / 1000} с`;
+  const n     = simSensors.length;
+  if (simRunning) {
+    dot.classList.remove('off');
+    if (stTxt) stTxt.innerHTML = 'Симулятор<span class="cpu-mode">RUN</span>';
+    if (btnTog) btnTog.textContent = 'Пауза';
+    if (freqEl) freqEl.textContent = `${n} ${plural(n, ['датчик', 'датчика', 'датчиков'])} · ${simInterval / 1000} с`;
+  } else {
+    dot.classList.add('off');
+    if (stTxt) stTxt.innerHTML = 'Симулятор<span class="cpu-mode stop">STOP</span>';
+    if (btnTog) btnTog.textContent = 'Запуск';
+    if (freqEl) freqEl.textContent = `${n} ${plural(n, ['датчик', 'датчика', 'датчиков'])}`;
+  }
+  const meta = document.getElementById('dash-sens-meta');
+  if (meta) meta.textContent = simRunning ? `обновление ${every}` : 'на паузе';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INSTRUMENT SCALES (shared by dashboard and telemetry)
+// ═══════════════════════════════════════════════════════════════
+function sensorState(s) {
+  const m = s.metric;
+  if (m.warn_hi != null && s.value > m.warn_hi) return 'hi';
+  if (m.warn_lo != null && s.value < m.warn_lo) return 'lo';
+  return '';
+}
+
+function scalePct(m, v) {
+  return Math.max(0, Math.min(1, (v - m.min) / (m.max - m.min)));
+}
+
+function scaleTitle(m) {
+  const d = sensorDec(m);
+  const parts = [`Диапазон ${fmtN(m.min, d)}–${fmtN(m.max, d)} ${m.unit}`];
+  if (m.warn_lo != null) parts.push(`нижний порог ${fmtN(m.warn_lo, d)}`);
+  if (m.warn_hi != null) parts.push(`верхний порог ${fmtN(m.warn_hi, d)}`);
+  return parts.join(', ');
+}
+
+function thresholdText(m) {
+  const d = sensorDec(m);
+  if (m.warn_lo != null && m.warn_hi != null) return `пороги ${fmtN(m.warn_lo, d)} и ${fmtN(m.warn_hi, d)}`;
+  if (m.warn_hi != null) return `порог ${fmtN(m.warn_hi, d)}`;
+  if (m.warn_lo != null) return `минимум ${fmtN(m.warn_lo, d)}`;
+  return '';
+}
+
+// ISA-101 indicator: hatched alarm zones past each threshold and a pointer at the value.
+// The track is a size container, so the pointer moves by --p × 100cqw without overflowing.
+function scaleHTML(s, id) {
+  const m  = s.metric;
+  const st = sensorState(s);
+  const zones = [];
+  if (m.warn_hi != null) {
+    const p = (scalePct(m, m.warn_hi) * 100).toFixed(2);
+    zones.push(`<div class="scale-zone" style="left:${p}%;right:0"></div>`);
+  }
+  if (m.warn_lo != null) {
+    const p = (scalePct(m, m.warn_lo) * 100).toFixed(2);
+    zones.push(`<div class="scale-zone lo" style="left:0;width:${p}%"></div>`);
+  }
+  return `
+    <div class="scale${st ? ' ' + st : ''}" id="${id}" title="${escHtml(scaleTitle(m))}">
+      <div class="scale-trk">${zones.join('')}</div>
+      <div class="scale-run" style="--p:${scalePct(m, s.value).toFixed(4)}"><i></i></div>
+    </div>`;
+}
+
+function updateScale(id, s) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const st = sensorState(s);
+  el.className = `scale${st ? ' ' + st : ''}`;
+  const run = el.querySelector('.scale-run');
+  if (run) run.style.setProperty('--p', scalePct(s.metric, s.value).toFixed(4));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LIVE CARDS (Telemetry page) — one card per unit
+// ═══════════════════════════════════════════════════════════════
+function groupSensorsByUnit() {
+  const units = [], byId = {};
+  for (const s of simSensors) {
+    if (!byId[s.eqId]) {
+      const eq = cachedEq.find(e => e.id === s.eqId);
+      byId[s.eqId] = { eqId: s.eqId, name: s.equipName, type: eq?.equipment_type_name || '', sensors: [] };
+      units.push(byId[s.eqId]);
+    }
+    byId[s.eqId].sensors.push(s);
+  }
+  return units;
+}
+
+function unitState(u) {
+  const st = u.sensors.map(sensorState);
+  return st.includes('hi') ? 'hi' : st.includes('lo') ? 'lo' : '';
+}
+
+function renderLiveCards() {
+  const grid = document.getElementById('live-cards-grid');
+  if (!grid) return;
+  if (simSensors.length === 0) {
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1">Симулятор не запущен</div>';
+    return;
+  }
+  grid.innerHTML = groupSensorsByUnit().map(u => `
+    <div class="unit">
+      <div class="unit-hd">
+        <span class="plate">${escHtml(u.name)}</span>
+        <span class="unit-type">${escHtml(u.type)}</span>
+        <span class="lamp ${unitState(u)}" id="unit-lamp-${u.eqId}"></span>
+      </div>
+      ${u.sensors.map(s => {
+        const st = sensorState(s);
+        return `
+        <div class="rd${st ? ' ' + st : ''}" id="rd-${s.idx}">
+          <div class="rd-hd">
+            <span class="rd-lbl">${escHtml(s.metric.label)}</span>
+            <span class="rd-val"><span class="num" id="rd-val-${s.idx}">${fmtSensor(s)}</span><span class="unit-u">${escHtml(s.metric.unit)}</span></span>
+          </div>
+          ${scaleHTML(s, `rd-scale-${s.idx}`)}
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+function updateLiveCards() {
+  for (const s of simSensors) {
+    const valEl = document.getElementById(`rd-val-${s.idx}`);
+    if (!valEl) continue;
+    const st = sensorState(s);
+    valEl.textContent = fmtSensor(s);
+    document.getElementById(`rd-${s.idx}`).className = `rd${st ? ' ' + st : ''}`;
+    updateScale(`rd-scale-${s.idx}`, s);
+  }
+  for (const u of groupSensorsByUnit()) {
+    const lamp = document.getElementById(`unit-lamp-${u.eqId}`);
+    if (lamp) lamp.className = `lamp ${unitState(u)}`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LIVE CHARTS (Telemetry page)
+// ═══════════════════════════════════════════════════════════════
+function chartTheme() {
+  const cs = getComputedStyle(document.body);
+  const v  = name => cs.getPropertyValue(name).trim();
+  return {
+    accent: v('--accent-line'), area: v('--chart-area'), crit: v('--crit'), warn: v('--warn'),
+    grid: v('--line'), tick: v('--tx-3'), tx1: v('--tx-1'), tx2: v('--tx-2'), line2: v('--line-2'), toast: v('--toast-bg'),
+  };
+}
+
+// Dashed lines at warn_hi / warn_lo, the same thresholds the notifications use
+function thresholdDatasets(m, len, c) {
+  const out = [];
+  if (m.warn_hi != null) out.push({ data: Array(len).fill(m.warn_hi), borderColor: c.crit, borderWidth: 1, borderDash: [4, 4], pointRadius: 0, fill: false, tension: 0, threshold: true });
+  if (m.warn_lo != null) out.push({ data: Array(len).fill(m.warn_lo), borderColor: c.warn, borderWidth: 1, borderDash: [4, 4], pointRadius: 0, fill: false, tension: 0, threshold: true });
+  return out;
+}
+
+let liveMainIdx = null;   // sensor shown as the main trend
+
+function setLiveMain(idx) {
+  liveMainIdx = idx;
+  renderLiveCharts();
+}
+
+// Compact traces stay neutral and turn red or amber only while out of limits
+function traceColor(s, c, isMain) {
+  const st = sensorState(s);
+  if (st === 'hi') return c.crit;
+  if (st === 'lo') return c.warn;
+  return isMain ? c.accent : c.tx2;
+}
+
+function liveValueHTML(s, isMain) {
+  return isMain
+    ? `${fmtSensor(s)}<small>${escHtml(s.metric.unit)}</small>`
+    : `${fmtSensor(s)} ${escHtml(s.metric.unit)}`;
+}
+
+function renderLiveCharts() {
+  const wrap = document.getElementById('live-charts-wrap');
+  if (!wrap) return;
+
+  for (const s of simSensors) {
+    if (s.chartObj) { s.chartObj.destroy(); s.chartObj = null; }
+  }
+
+  if (!simSensors.length) {
+    wrap.innerHTML = '<div class="empty" style="grid-column:1/-1">Нет данных</div>';
+    return;
+  }
+
+  const main  = simSensors.find(s => s.idx === liveMainIdx) || simSensors[0];
+  liveMainIdx = main.idx;
+  const shown = [main, ...simSensors.filter(s => s !== main).slice(0, 8)];
+
+  wrap.innerHTML = shown.map(s => {
+    const st = sensorState(s), isMain = s === main;
+    const head = `
+      <div class="lcp-h">
+        <div class="lcp-t"><b>${escHtml(s.equipName)}</b> ${escHtml(s.metric.label)}</div>
+        ${isMain ? `<div class="lcp-thr">${fmtN(s.metric.min, sensorDec(s.metric))}–${fmtN(s.metric.max, sensorDec(s.metric))} · ${thresholdText(s.metric)}</div>` : ''}
+        <div class="lcp-v${st ? ' ' + st : ''}" id="lcpv-${s.idx}">${liveValueHTML(s, isMain)}</div>
+      </div>
+      <div class="lcp-c"><canvas id="lcc-${s.idx}" role="img" aria-label="${escHtml(s.equipName)}, ${escHtml(s.metric.label)}"></canvas></div>`;
+    return isMain
+      ? `<div class="lcp main">${head}</div>`
+      : `<button type="button" class="lcp" onclick="setLiveMain(${s.idx})" title="Показать крупно">${head}</button>`;
+  }).join('');
+
+  const c = chartTheme();
+  for (const s of shown) {
+    const canvas = document.getElementById(`lcc-${s.idx}`);
+    if (!canvas) continue;
+    const m      = s.metric;
+    const isMain = s === main;
+    const hist   = s.history.slice(-60);
+    s.chartObj = new Chart(canvas.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels:   hist.map(() => ''),
+        datasets: [
+          {
+            data: hist.map(h => h.v), borderColor: traceColor(s, c, isMain),
+            borderWidth: isMain ? 2 : 1.25, pointRadius: 0, tension: 0.3,
+            fill: isMain ? 'origin' : false, backgroundColor: c.area,
+          },
+          ...thresholdDatasets(m, hist.length, c),
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: {
+          x: { display: false },
+          y: {
+            display: isMain,
+            border: { display: false },
+            grid:  { color: c.grid, drawTicks: false },
+            ticks: { color: c.tick, font: { family: 'IBM Plex Mono', size: 11 }, maxTicksLimit: 6, padding: 8, callback: v => fmtN(v, Math.min(sensorDec(m), 1)) },
+            min: m.min,
+            max: m.max,
+          },
+        },
+      },
+    });
+    s.chartObj.$main = isMain;
+  }
+}
+
+function updateLiveCharts() {
+  const c = chartTheme();
+  for (const s of simSensors) {
+    if (!s.chartObj) continue;
+    const isMain = s.chartObj.$main;
+    const vEl = document.getElementById(`lcpv-${s.idx}`);
+    if (vEl) {
+      const st = sensorState(s);
+      vEl.innerHTML = liveValueHTML(s, isMain);
+      vEl.className = `lcp-v${st ? ' ' + st : ''}`;
+    }
+    const ds = s.chartObj.data.datasets[0];
+    const lb = s.chartObj.data.labels;
+    ds.data.push(s.value);
+    lb.push('');
+    if (ds.data.length > 60) { ds.data.shift(); lb.shift(); }
+    ds.borderColor = traceColor(s, c, isMain);
+    s.chartObj.update('none');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DASHBOARD MINI (live sensor instruments)
+// ═══════════════════════════════════════════════════════════════
+function renderDashMini() {
+  const grid = document.getElementById('dash-live-metrics');
+  if (!grid) return;
+
+  if (!simSensors.length && cachedEq.length > 0) {
+    grid.innerHTML = cachedEq.slice(0, 4).map(eq => `
+      <div class="inst inst-empty">
+        <div class="inst-hd"><span class="inst-lbl">${escHtml(eq.equipment_type_name || 'Датчик')}</span><span class="plate">${escHtml(eq.name)}</span></div>
+        <div class="inst-val"><span class="num">—</span></div>
+      </div>`).join('');
+    return;
+  }
+
+  const top4 = simSensors.slice(0, 4);
+  if (!top4.length) return;
+
+  grid.innerHTML = top4.map((s, i) => {
+    const m = s.metric, d = sensorDec(m), st = sensorState(s);
+    return `
+      <div class="inst${st ? ' ' + st : ''}" id="dmi-${i}" role="link" tabindex="0" onclick="showPage('telemetry')" onkeydown="if(event.key==='Enter')showPage('telemetry')">
+        <div class="inst-hd">
+          <span class="inst-lbl">${escHtml(m.label)}</span>
+          <span class="plate">${escHtml(s.equipName)}</span>
+        </div>
+        <div class="inst-val"><span class="num" id="dmv-${i}">${fmtSensor(s)}</span><span class="inst-u">${escHtml(m.unit)}</span></div>
+        ${scaleHTML(s, `dms-${i}`)}
+        <div class="inst-lbls"><span>${fmtN(m.min, d)}–${fmtN(m.max, d)}</span><span>${thresholdText(m)}</span></div>
+      </div>`;
+  }).join('');
+}
+
+function updateDashMini() {
+  const top4 = simSensors.slice(0, 4);
+  for (let i = 0; i < top4.length; i++) {
+    const s     = top4[i];
+    const valEl = document.getElementById(`dmv-${i}`);
+    if (!valEl) { renderDashMini(); return; }
+    const st = sensorState(s);
+    valEl.textContent = fmtSensor(s);
+    document.getElementById(`dmi-${i}`).className = `inst${st ? ' ' + st : ''}`;
+    updateScale(`dms-${i}`, s);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════════
+const ICONS = {
+  alert:     '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  arrowDown: '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>',
+  bellOff:   '<path d="M8.7 3A6 6 0 0 1 18 8a21.3 21.3 0 0 0 .6 5"/><path d="M17 17H3s3-2 3-9a4.67 4.67 0 0 1 .3-1.7"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="m2 2 20 20"/>',
+  check:     '<path d="M20 6 9 17l-5-5"/>',
+  plus:      '<path d="M5 12h14"/><path d="M12 5v14"/>',
+  pencil:    '<path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/><path d="m15 5 4 4"/>',
+  move:      '<path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/>',
+  archiveX:  '<rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="m9.5 17 5-5"/><path d="m9.5 12 5 5"/>',
+  chevL:     '<path d="m15 18-6-6 6-6"/>',
+  chevR:     '<path d="m9 18 6-6-6-6"/>',
+};
+
+function ico(name) {
+  return `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
+}
+
+function plural(n, forms) {
+  const a = Math.abs(n) % 100, b = a % 10;
+  if (a > 10 && a < 20) return forms[2];
+  if (b > 1 && b < 5)   return forms[1];
+  if (b === 1)          return forms[0];
+  return forms[2];
+}
+
+// Decimal places from the metric's range: wide scales read in whole units
+function sensorDec(m) {
+  const span = m.max - m.min;
+  return span >= 100 ? 0 : span >= 10 ? 1 : 2;
+}
+function fmtSensor(s) { return fmtN(s.value, sensorDec(s.metric)); }
+
+function fmtD(d) {
+  if (!d) return '–';
+  return new Date(d).toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+function fmtN(n, dec = 0) {
+  return n == null ? '–' : Number(n).toLocaleString('ru-RU', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+function fmtC(n) {
+  if (n == null) return '–';
+  const v = Number(n);
+  if (v >= 1e9) return fmtN(v / 1e9, 2) + ' млрд ₽';
+  if (v >= 1e6) return fmtN(v / 1e6, 2) + ' млн ₽';
+  if (v >= 1e3) return fmtN(v / 1e3) + ' тыс. ₽';
+  return fmtN(v) + ' ₽';
+}
+
+const STATUS_RU = {
+  active:'Активное', maintenance:'На обслуживании', requires_maintenance:'Требует ТО',
+  in_repair:'В ремонте', decommissioned:'Списано', storage:'На складе',
+  open:'Открытая', in_progress:'В работе', completed:'Выполнена', cancelled:'Отменена',
+  preventive:'Плановое ТО', corrective:'Корректирующее', inspection:'Инспекция',
+  admin:'Администратор', engineer:'Инженер', storekeeper:'Кладовщик', auditor:'Аудитор', viewer:'Наблюдатель',
+  I:'Добавление', U:'Обновление', D:'Удаление',
+};
+
+function badge(val) {
+  if (!val) return '';
+  return `<span class="b b-${val}">${STATUS_RU[val] || val.replace(/_/g,' ')}</span>`;
+}
+
+const _dbt = {};
+function debounce(fn, ms) {
+  return function(...a) { clearTimeout(_dbt[fn.name]); _dbt[fn.name] = setTimeout(() => fn(...a), ms); };
+}
+
+function toast(msg, type = 'info') {
+  const el  = document.createElement('div');
+  el.className = `toast t-${type === 'success' ? 'ok' : type === 'error' ? 'err' : 'info'}`;
+  el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+async function api(path, opts = {}) {
+  const h = { 'Content-Type': 'application/json' };
+  if (token) h['Authorization'] = `Bearer ${token}`;
+  const r = await fetch(API + path, { ...opts, headers: { ...h, ...(opts.headers||{}) } });
+  if (r.status === 204) return null;
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.detail || r.statusText);
+  return d;
+}
+
+function openOv(id)  { document.getElementById(id)?.classList.add('open'); }
+function closeOv(id) { document.getElementById(id)?.classList.remove('open'); }
+document.addEventListener('click', e => { if (e.target.classList.contains('ov')) e.target.classList.remove('open'); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.ov.open').forEach(o => o.classList.remove('open')); });
+
+function pSel(id, items, valKey, lblKey, placeholder) {
+  const el = document.getElementById(id);
+  if (!el || !Array.isArray(items)) return;
+  el.innerHTML = (placeholder ? `<option value="">${placeholder}</option>` : '') +
+    items.map(i => `<option value="${i[valKey]}">${escHtml(String(i[lblKey]))}</option>`).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════════════
+function setDemo(em, pw) {
+  document.getElementById('l-em').value = em;
+  document.getElementById('l-pw').value = pw;
+}
+
+async function doLogin() {
+  const email    = document.getElementById('l-em').value.trim();
+  const password = document.getElementById('l-pw').value;
+  if (!email || !password) { toast('Введите email и пароль', 'error'); return; }
+  try {
+    const r = await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+    token = r.access_token;
+    localStorage.setItem('ems_token', token);
+    currentUser = r;
+    applyUser();
+    document.getElementById('ls').style.display = 'none';
+    await loadRefData();
+    showPage('dashboard');
+  } catch (e) {
+    toast('Ошибка входа: ' + e.message, 'error');
+  }
+}
+
+function logout() {
+  stopSimulator();
+  token = null;
+  localStorage.removeItem('ems_token');
+  location.reload();
+}
+
+function applyUser() {
+  if (!currentUser) return;
+  const role = currentUser.role;
+  const initials = currentUser.full_name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('');
+  document.getElementById('u-av').textContent = initials.toUpperCase();
+  document.getElementById('u-nm').textContent  = currentUser.full_name;
+  document.getElementById('u-rl').textContent  = STATUS_RU[role] || role;
+
+  if (!['admin','auditor'].includes(role)) {
+    document.getElementById('nav-audit').style.display = 'none';
+    document.getElementById('nav-emp').style.display   = 'none';
+  }
+  if (['admin','storekeeper'].includes(role)) {
+    document.getElementById('eq-add-btn').innerHTML =
+      `<button class="btn btn-p" onclick="openAddEqModal()">${ico('plus')}Добавить оборудование</button>`;
+  }
+  if (['admin','engineer'].includes(role)) {
+    document.getElementById('task-add-btn').innerHTML =
+      `<button class="btn btn-p" onclick="openAddTaskModal()">${ico('plus')}Создать задачу</button>`;
+  }
+}
+
+async function tryAutoLogin() {
+  if (!token) return;
+  try {
+    const me = await api('/api/auth/me');
+    currentUser = { ...me, access_token: token };
+    applyUser();
+    document.getElementById('ls').style.display = 'none';
+    await loadRefData();
+    showPage('dashboard');
+  } catch {
+    token = null;
+    localStorage.removeItem('ems_token');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+// Breadcrumb: sidebar section / nav item
+const PAGE_CRUMBS = {
+  dashboard: ['Главное', 'Сводка'], equipment: ['Инвентаризация', 'Оборудование'], locations: ['Инвентаризация', 'Локации'],
+  telemetry: ['Мониторинг', 'Телеметрия'], maintenance: ['Мониторинг', 'Обслуживание'],
+  audit: ['Администрирование', 'Журнал аудита'], employees: ['Администрирование', 'Сотрудники'], roles: ['Администрирование', 'Матрица прав доступа'],
+};
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
+  const pageEl = document.getElementById(`page-${name}`);
+  if (!pageEl) return;
+  pageEl.classList.add('active');
+  document.querySelectorAll('.ni').forEach(n => {
+    if (n.getAttribute('onclick')?.includes(`'${name}'`)) n.classList.add('active');
+  });
+  const [group, title] = PAGE_CRUMBS[name] || ['', name];
+  document.getElementById('tb-group').textContent = group;
+  document.getElementById('tb-title').textContent = title;
+
+  switch (name) {
+    case 'dashboard':   loadDashboard(); break;
+    case 'equipment':   populateForms(); loadEquipment(); break;
+    case 'locations':   loadLocations(); break;
+    case 'telemetry':
+      populateForms();
+      renderLiveCards();
+      renderLiveCharts();
+      pSel('tel-eq-sel', cachedEq, 'id', 'name', 'Выберите оборудование');
+      break;
+    case 'maintenance': populateForms(); loadTasks(); loadTaskStats(); break;
+    case 'audit':       loadAudit(); break;
+    case 'employees':   loadEmployees(); break;
+    case 'roles':       loadRoleMatrix(); break;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// REF DATA
+// ═══════════════════════════════════════════════════════════════
+async function loadRefData() {
+  try {
+    const [types, locs, eqResp] = await Promise.all([
+      api('/api/equipment/types'),
+      api('/api/equipment/locations'),
+      api('/api/equipment?per_page=100'),
+    ]);
+    const emps = token ? await api('/api/employees').catch(() => []) : [];
+    cachedTypes = types || [];
+    cachedLocs  = locs  || [];
+    cachedEmps  = emps  || [];
+    cachedEq    = eqResp?.items || [];
+
+    populateForms();
+    if (cachedEq.length > 0 && simSensors.length === 0) {
+      initSimulator(cachedEq);
+    }
+    const activePage = document.querySelector('.page.active')?.id;
+    if (activePage === 'page-dashboard') {
+      const cacheStats = buildStatsFromCache();
+      applyDashStats(cacheStats);
+      renderDashMini();
+    }
+  } catch (e) {
+    console.warn('loadRefData error:', e);
+  }
+}
+
+function populateForms() {
+  const tpFilter = document.getElementById('eq-tp');
+  if (tpFilter) {
+    tpFilter.innerHTML = '<option value="">Все типы</option>' +
+      cachedTypes.map(t => `<option value="${t.id}">${escHtml(t.name)}</option>`).join('');
+  }
+  pSel('eq-tp-sel',   cachedTypes, 'id', 'name', 'Выберите тип');
+  pSel('eq-loc-sel',  cachedLocs,  'id', 'name', 'Не задано');
+  pSel('eq-resp-sel', cachedEmps,  'id', 'full_name', 'Не задано');
+  pSel('mv-loc',      cachedLocs,  'id', 'name', 'Выберите локацию');
+  pSel('task-eq',     cachedEq,    'id', 'name', 'Выберите оборудование');
+  pSel('task-asgn',   cachedEmps,  'id', 'full_name', 'Не назначен');
+  pSel('loc-par',     cachedLocs,  'id', 'name', 'Верхний уровень');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════════════
+function buildStatsFromCache() {
+  const byStatus = {}, byType = {};
+  let totalCost = 0, totalRes = 0;
+  for (const eq of cachedEq) {
+    byStatus[eq.status] = (byStatus[eq.status] || 0) + 1;
+    const tn = eq.equipment_type_name || 'Неизвестно';
+    byType[tn] = (byType[tn] || 0) + 1;
+    totalCost += Number(eq.purchase_cost || 0);
+    totalRes  += Number(eq.residual_value || 0);
+  }
+  return {
+    total_equipment:      cachedEq.length,
+    active_equipment:     byStatus.active               || 0,
+    in_repair:            (byStatus.in_repair            || 0) + (byStatus.requires_maintenance || 0),
+    requires_maintenance: byStatus.requires_maintenance  || 0,
+    decommissioned:       byStatus.decommissioned        || 0,
+    storage:              byStatus.storage               || 0,
+    open_tasks: 0, in_progress_tasks: 0, completed_tasks_month: 0,
+    total_purchase_value: totalCost,
+    total_residual_value: totalRes,
+    equipment_by_status:  byStatus,
+    equipment_by_type:    byType,
+    tasks_by_type:        {},
+  };
+}
+
+function applyDashStats(s) {
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('d-total',   s.total_equipment);
+  set('d-active',  s.active_equipment);
+  set('d-repair',  s.in_repair);
+  set('d-tasks',   s.open_tasks);
+  set('d-decomm',  s.decommissioned);
+  set('d-storage', s.storage !== undefined ? s.storage : (s.equipment_by_status?.storage || 0));
+  set('d-cost',    fmtC(s.total_purchase_value));
+  set('d-res',     fmtC(s.total_residual_value));
+  set('nb-eq',     s.total_equipment);
+  set('nb-tasks',  s.open_tasks);
+  document.getElementById('d-repair')?.classList.toggle('crit', (s.in_repair || 0) > 0);
+
+  const deprEl = document.getElementById('d-depr-sub');
+  if (deprEl && s.total_purchase_value > 0) {
+    const pct = ((1 - s.total_residual_value / s.total_purchase_value) * 100).toFixed(0);
+    deprEl.textContent = `амортизация ${pct}%`;
+  }
+
+  const maintSub = document.getElementById('d-maint-sub');
+  if (maintSub) {
+    const rm = s.in_repair || 0;
+    const mt = s.requires_maintenance || s.equipment_by_status?.requires_maintenance || 0;
+    maintSub.textContent = `${rm - mt} в ремонте, ${mt} требует ТО`;
+  }
+
+  renderFleet();
+  renderBarList('dash-eq-types', s.equipment_by_type, k => k);
+  renderTaskStatus(s);
+  renderBarList('dash-task-types', s.tasks_by_type, k => STATUS_LABELS_RU[k] || k);
+  renderStatusBars(s.equipment_by_status, s.total_equipment);
+  renderDashEqList();
+}
+
+const STATUS_ORDER = ['in_repair', 'requires_maintenance', 'maintenance', 'active', 'storage', 'decommissioned'];
+
+// Fleet map: one tile per unit with its status lamp, units that need attention first
+function renderFleet() {
+  const wrap = document.getElementById('dash-fleet');
+  if (!wrap) return;
+  const n    = cachedEq.length;
+  const meta = document.getElementById('fleet-meta');
+  if (meta) meta.textContent = n ? `${n} ${plural(n, ['единица', 'единицы', 'единиц'])}` : '';
+  if (!n) { wrap.innerHTML = '<div class="empty" style="grid-column:1/-1">Нет данных</div>'; return; }
+  const rank  = st => { const i = STATUS_ORDER.indexOf(st); return i < 0 ? STATUS_ORDER.length : i; };
+  const items = [...cachedEq].sort((a, b) => rank(a.status) - rank(b.status) || a.name.localeCompare(b.name));
+  wrap.innerHTML = items.map(eq => {
+    const where = [eq.equipment_type_name, eq.location_name].filter(Boolean).join(' · ');
+    return `
+    <button type="button" class="tile s-${escHtml(eq.status)}" onclick="showPage('equipment')" title="${escHtml(where)}">
+      <span class="tile-hd">
+        <span class="tile-id"><span class="tag">${escHtml(eq.name)}</span><span class="tile-st">${STATUS_RU[eq.status] || escHtml(eq.status)}</span></span>
+        <span class="lamp"></span>
+      </span>
+      ${hourMeterHTML(eq.operation_hours)}
+    </button>`;
+  }).join('');
+}
+
+// Electromechanical hour meter: five drums of whole hours and an inverted tenths drum
+function hourMeterHTML(hours) {
+  const h = Math.max(0, Number(hours) || 0);
+  const whole  = String(Math.floor(h) % 100000).padStart(5, '0');
+  const tenths = Math.floor((h * 10) % 10);
+  return `<span class="meter" aria-label="Моточасы: ${fmtN(h, 1)}">
+    <span class="meter-win" aria-hidden="true">${[...whole].map(d => `<i>${d}</i>`).join('')}<i class="tenth">${tenths}</i></span>
+    <span class="meter-u" aria-hidden="true">моточасы</span>
+  </span>`;
+}
+
+// Ranked list with thin neutral bars
+function renderBarList(id, obj, labelOf) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const rows = Object.entries(obj || {}).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+  if (!rows.length) { el.innerHTML = '<div class="empty" style="padding:24px 0">Нет данных</div>'; return; }
+  const max   = rows[0][1];
+  const total = rows.reduce((a, [, v]) => a + v, 0);
+  el.innerHTML = rows.map(([k, v]) => `
+    <div>
+      <div class="bar-hd"><span class="bar-lbl">${escHtml(labelOf(k))}</span><span class="bar-cnt"><b>${v}</b> · ${Math.round(v / total * 100)}%</span></div>
+      <div class="bar-trk"><div class="bar-fill" style="transform:scaleX(${(v / max).toFixed(4)})"></div></div>
+    </div>`).join('');
+}
+
+// Open → in progress → done as one segmented bar; open tasks carry the accent
+function renderTaskStatus(s) {
+  const el = document.getElementById('dash-task-status');
+  if (!el) return;
+  const segs = [
+    { cls: 'seg-open', label: 'Открытые',           n: s.open_tasks            || 0 },
+    { cls: 'seg-prog', label: 'В работе',           n: s.in_progress_tasks     || 0 },
+    { cls: 'seg-done', label: 'Выполнено за месяц', n: s.completed_tasks_month || 0 },
+  ];
+  el.innerHTML = `
+    <div class="pipe-figs">${segs.map(x => `<div class="pipe-fig ${x.cls}"><span>${x.label}</span><b>${x.n}</b></div>`).join('')}</div>
+    <div class="pipe-bar">${segs.filter(x => x.n).map(x => `<div class="pipe-seg ${x.cls}" style="flex:${x.n} 1 0"></div>`).join('')}</div>`;
+}
+
+function renderStatusBars(byStatus, total) {
+  const container = document.getElementById('dash-status-bars');
+  if (!container || !byStatus) return;
+  const order = ['active', 'in_repair', 'requires_maintenance', 'maintenance', 'storage', 'decommissioned'];
+  const t = total || 1;
+  container.innerHTML = order.map(key => {
+    const cnt = byStatus[key] || 0;
+    return `
+      <div class="s-${key}">
+        <div class="bar-hd">
+          <span class="bar-lbl"><span class="lamp"></span>${STATUS_RU[key]}</span>
+          <span class="bar-cnt"><b>${cnt}</b> · ${Math.round(cnt / t * 100)}%</span>
+        </div>
+        <div class="bar-trk"><div class="bar-fill" style="transform:scaleX(${(cnt / t).toFixed(4)})"></div></div>
+      </div>`;
+  }).join('');
+}
+
+function renderDashEqList() {
+  const tb = document.getElementById('dash-eq-list');
+  if (!tb) return;
+  const items = [...cachedEq]
+    .sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0))
+    .slice(0, 6);
+  if (!items.length) {
+    tb.innerHTML = '<tr><td colspan="4" class="empty">Нет данных</td></tr>';
+    return;
+  }
+  tb.innerHTML = items.map(eq => `
+    <tr>
+      <td>
+        <div class="cell-main">${escHtml(eq.name)}</div>
+        <div class="cell-sub">${escHtml(eq.serial_number)}</div>
+      </td>
+      <td>${badge(eq.status)}</td>
+      <td class="muted">${escHtml(eq.equipment_type_name || '–')}</td>
+      <td class="num r">${fmtN(eq.operation_hours)} ч</td>
+    </tr>`).join('');
+}
+
+async function loadDashboard() {
+  renderDashMini();
+  const cacheStats = buildStatsFromCache();
+  applyDashStats(cacheStats);
+  updateNotifBadges();
+
+  try {
+    const s = await api('/api/dashboard/stats');
+    applyDashStats({
+      ...cacheStats,
+      open_tasks:            s.open_tasks            || 0,
+      in_progress_tasks:     s.in_progress_tasks     || 0,
+      completed_tasks_month: s.completed_tasks_month || 0,
+      tasks_by_type:         s.tasks_by_type         || {},
+      total_purchase_value:  s.total_purchase_value  || cacheStats.total_purchase_value,
+      total_residual_value:  s.total_residual_value  || cacheStats.total_residual_value,
+    });
+  } catch {}
+}
+
+const STATUS_LABELS_RU = {
+  active:'Активное', maintenance:'Обслуживание', requires_maintenance:'Требует ТО',
+  in_repair:'В ремонте', decommissioned:'Списано', storage:'Склад',
+  preventive:'Плановое ТО', corrective:'Корректирующее', inspection:'Инспекция',
+};
+
+// ═══════════════════════════════════════════════════════════════
+// HISTORICAL CHART
+// ═══════════════════════════════════════════════════════════════
+// The metric config (label, thresholds) the simulator uses for this unit, if any
+function metricConfigFor(eqId, name) {
+  const eq = cachedEq.find(e => String(e.id) === String(eqId));
+  return eq ? getMetricsForEquipment(eq).find(m => m.name === name) || null : null;
+}
+
+async function onTelEqChange() {
+  const eqId = document.getElementById('tel-eq-sel')?.value;
+  if (!eqId) return;
+  try {
+    const metrics = await api(`/api/telemetry/metrics?equipment_id=${eqId}`);
+    const sel = document.getElementById('tel-met-sel');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Выберите метрику</option>' +
+      metrics.map(m => {
+        const cfg = metricConfigFor(eqId, m);
+        return `<option value="${escHtml(m)}">${escHtml(cfg ? `${cfg.label}, ${cfg.unit}` : m)}</option>`;
+      }).join('');
+  } catch (e) { toast('Ошибка загрузки метрик: ' + e.message, 'error'); }
+}
+
+async function loadHistChart() {
+  const eqId = document.getElementById('tel-eq-sel')?.value;
+  const met  = document.getElementById('tel-met-sel')?.value;
+  const hrs  = document.getElementById('tel-hrs')?.value || '24';
+  if (!eqId || !met) { toast('Выберите оборудование и метрику', 'info'); return; }
+  try {
+    const [cd, sm] = await Promise.all([
+      api(`/api/telemetry/chart?equipment_id=${eqId}&metric_name=${encodeURIComponent(met)}&hours=${hrs}`),
+      api(`/api/telemetry/summary?equipment_id=${eqId}&metric_name=${encodeURIComponent(met)}&hours=${hrs}`),
+    ]);
+    const cfg = metricConfigFor(eqId, met);
+    const dec = cfg ? sensorDec(cfg) : 2;
+    const s = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    s('h-min', sm.min != null ? fmtN(sm.min, dec) : '–');
+    s('h-max', sm.max != null ? fmtN(sm.max, dec) : '–');
+    s('h-avg', sm.avg != null ? fmtN(sm.avg, dec) : '–');
+    s('h-cnt', fmtN(sm.count || 0));
+
+    if (CHARTS['ch-hist']) CHARTS['ch-hist'].destroy();
+    document.getElementById('hist-chart-wrap')?.classList.remove('is-empty');
+    const ctx = document.getElementById('ch-hist')?.getContext('2d');
+    if (!ctx) return;
+    const c      = chartTheme();
+    const labels = cd.points.map(p => new Date(p.timestamp).toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' }));
+    CHARTS['ch-hist'] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: cfg ? cfg.label : met, data: cd.points.map(p => p.value), borderColor: c.accent, backgroundColor: c.area, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, pointHoverBackgroundColor: c.accent, fill: 'origin', tension: 0.35 },
+          ...(cfg ? thresholdDatasets(cfg, labels.length, c) : []),
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: 'index', intersect: false, displayColors: false,
+            filter: item => !item.dataset.threshold,
+            backgroundColor: c.toast, borderColor: c.line2, borderWidth: 1, padding: 10, cornerRadius: 8,
+            titleColor: c.tx2, bodyColor: c.tx1,
+            titleFont: { family: 'IBM Plex Mono', size: 12, weight: '400' }, bodyFont: { family: 'IBM Plex Mono', size: 13, weight: '500' },
+            callbacks: { label: item => `${fmtN(item.parsed.y, dec)}${cfg ? ' ' + cfg.unit : ''}` },
+          },
+        },
+        scales: {
+          x: { border: { display: false }, grid: { display: false }, ticks: { color: c.tick, font: { family: 'IBM Plex Mono', size: 11 }, maxTicksLimit: 8, maxRotation: 0 } },
+          y: { border: { display: false }, grid: { color: c.grid, drawTicks: false }, ticks: { color: c.tick, font: { family: 'IBM Plex Mono', size: 11 }, padding: 8, callback: v => fmtN(v, Math.min(dec, 1)) } },
+        },
+        interaction: { mode: 'nearest', axis: 'x', intersect: false },
+      },
+    });
+  } catch (e) { toast('Ошибка загрузки: ' + e.message, 'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EQUIPMENT
+// ═══════════════════════════════════════════════════════════════
+function canDo(res, act) {
+  const pm = {
+    admin:       { equipment: ['read','write','move','update','decommission'], maintenance: ['read','write'] },
+    engineer:    { equipment: ['read','update'],                               maintenance: ['read','write'] },
+    storekeeper: { equipment: ['read','write','move','update'],                maintenance: ['read'] },
+    auditor:     { equipment: ['read'],                                        maintenance: ['read'] },
+    viewer:      { equipment: ['read'],                                        maintenance: ['read'] },
+  };
+  return (pm[currentUser?.role]?.[res] || []).includes(act);
+}
+
+async function loadEquipment() {
+  const srch = document.getElementById('eq-search')?.value || '';
+  const st   = document.getElementById('eq-st')?.value   || '';
+  const tp   = document.getElementById('eq-tp')?.value   || '';
+  const pg   = PAGES.eq;
+  const p    = new URLSearchParams({ page: pg, per_page: 15 });
+  if (srch) p.set('search', srch);
+  if (st)   p.set('status', st);
+  if (tp)   p.set('type_id', tp);
+
+  const tb = document.getElementById('eq-tbody');
+  tb.innerHTML = '<tr><td colspan="8"><div class="empty"><div class="spin"></div></div></td></tr>';
+  try {
+    const r = await api(`/api/equipment?${p}`);
+    r.items.forEach(eq => { EQ_STORE[eq.id] = eq; });
+    if (!r.items.length) {
+      tb.innerHTML = '<tr><td colspan="8"><div class="empty">Оборудование не найдено</div></td></tr>';
+      document.getElementById('eq-pag').innerHTML = '';
+      return;
+    }
+    tb.innerHTML = r.items.map(eq => `
+      <tr>
+        <td>
+          <div class="cell-main">${escHtml(eq.name)}</div>
+          <div class="cell-sub">${escHtml(eq.inventory_number || '')}</div>
+        </td>
+        <td class="mono">${escHtml(eq.serial_number)}</td>
+        <td class="muted">${escHtml(eq.equipment_type_name || '–')}</td>
+        <td class="muted">${escHtml(eq.location_name || '–')}</td>
+        <td>${badge(eq.status)}</td>
+        <td class="num r">${fmtN(eq.operation_hours)} ч</td>
+        <td class="num r">${fmtC(eq.purchase_cost)}</td>
+        <td>
+          <div class="row-acts">
+            ${canDo('equipment','move') ? `<button class="btn btn-q btn-sm btn-ico" title="Переместить" aria-label="Переместить" onclick="openMoveModal('${eq.id}')">${ico('move')}</button>` : ''}
+            ${canDo('equipment','update') ? `<button class="btn btn-q btn-sm btn-ico" title="Редактировать" aria-label="Редактировать" onclick="openEditEqModal('${eq.id}')">${ico('pencil')}</button>` : ''}
+            ${canDo('equipment','decommission') ? (eq.status !== 'decommissioned' ? `<button class="btn btn-q danger btn-sm btn-ico" title="Списать" aria-label="Списать" onclick="openDecommModal('${eq.id}')">${ico('archiveX')}</button>` : '<span class="slot"></span>') : ''}
+          </div>
+        </td>
+      </tr>`).join('');
+    renderPag('eq-pag', r.total, 15, pg, p => { PAGES.eq = p; loadEquipment(); });
+  } catch (e) {
+    tb.innerHTML = `<tr><td colspan="8" class="err-cell">${escHtml(e.message)}</td></tr>`;
+  }
+}
+
+const debouncedLoadEquipment = debounce(loadEquipment, 400);
+
+function openAddEqModal() {
+  document.getElementById('eq-mt').textContent = 'Добавить оборудование';
+  document.getElementById('eq-id').value = '';
+  ['eq-name','eq-sn','eq-inv','eq-hrs','eq-cost','eq-res'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('eq-date').value    = new Date().toISOString().slice(0, 10);
+  document.getElementById('eq-st-sel').value  = 'active';
+  document.getElementById('eq-tp-sel').selectedIndex  = 0;
+  document.getElementById('eq-loc-sel').selectedIndex = 0;
+  document.getElementById('eq-resp-sel').selectedIndex= 0;
+  openOv('ov-eq');
+}
+
+function openEditEqModal(id) {
+  const eq = EQ_STORE[id];
+  if (!eq) { toast('Данные не найдены', 'error'); return; }
+  document.getElementById('eq-mt').textContent      = 'Редактировать оборудование';
+  document.getElementById('eq-id').value             = eq.id;
+  document.getElementById('eq-name').value           = eq.name;
+  document.getElementById('eq-sn').value             = eq.serial_number;
+  document.getElementById('eq-inv').value            = eq.inventory_number || '';
+  document.getElementById('eq-st-sel').value         = eq.status;
+  document.getElementById('eq-cost').value           = eq.purchase_cost;
+  document.getElementById('eq-res').value            = eq.residual_value || '';
+  document.getElementById('eq-date').value           = eq.purchase_date;
+  document.getElementById('eq-hrs').value            = eq.operation_hours;
+  if (eq.equipment_type_id) document.getElementById('eq-tp-sel').value  = eq.equipment_type_id;
+  if (eq.location_id)       document.getElementById('eq-loc-sel').value  = eq.location_id;
+  else                      document.getElementById('eq-loc-sel').value  = '';
+  if (eq.responsible_employee_id) document.getElementById('eq-resp-sel').value = eq.responsible_employee_id;
+  else                            document.getElementById('eq-resp-sel').value = '';
+  openOv('ov-eq');
+}
+
+async function saveEq() {
+  const id   = document.getElementById('eq-id').value.trim();
+  const name = document.getElementById('eq-name').value.trim();
+  const sn   = document.getElementById('eq-sn').value.trim();
+  const cost = parseFloat(document.getElementById('eq-cost').value);
+  if (!name) { toast('Введите наименование', 'error'); return; }
+  if (!id && !sn) { toast('Введите серийный номер', 'error'); return; }
+  if (!id && isNaN(cost)) { toast('Введите закупочную стоимость', 'error'); return; }
+  try {
+    if (id) {
+      await api(`/api/equipment/${id}`, { method: 'PATCH', body: JSON.stringify({
+        name,
+        location_id:             document.getElementById('eq-loc-sel').value || null,
+        responsible_employee_id: document.getElementById('eq-resp-sel').value || null,
+        status:                  document.getElementById('eq-st-sel').value,
+        residual_value:          document.getElementById('eq-res').value ? parseFloat(document.getElementById('eq-res').value) : null,
+        operation_hours:         parseInt(document.getElementById('eq-hrs').value) || 0,
+      })});
+      toast('Оборудование обновлено', 'success');
+    } else {
+      const typeId = document.getElementById('eq-tp-sel').value;
+      if (!typeId) { toast('Выберите тип оборудования', 'error'); return; }
+      await api('/api/equipment', { method: 'POST', body: JSON.stringify({
+        name, serial_number: sn,
+        inventory_number:        document.getElementById('eq-inv').value.trim() || null,
+        equipment_type_id:       typeId,
+        location_id:             document.getElementById('eq-loc-sel').value || null,
+        responsible_employee_id: document.getElementById('eq-resp-sel').value || null,
+        status:                  document.getElementById('eq-st-sel').value,
+        purchase_cost:           cost,
+        residual_value:          document.getElementById('eq-res').value ? parseFloat(document.getElementById('eq-res').value) : null,
+        purchase_date:           document.getElementById('eq-date').value,
+        operation_hours:         parseInt(document.getElementById('eq-hrs').value) || 0,
+      })});
+      toast('Оборудование добавлено', 'success');
+      await loadRefData();
+    }
+    closeOv('ov-eq');
+    loadEquipment();
+  } catch (e) { toast('Ошибка: ' + e.message, 'error'); }
+}
+
+function openMoveModal(id) {
+  document.getElementById('mv-id').value     = id;
+  document.getElementById('mv-reason').value = '';
+  document.getElementById('mv-loc').value    = '';
+  openOv('ov-move');
+}
+
+async function confirmMove() {
+  const id  = document.getElementById('mv-id').value;
+  const loc = document.getElementById('mv-loc').value;
+  if (!loc) { toast('Выберите расположение', 'error'); return; }
+  try {
+    await api(`/api/equipment/${id}/move`, { method: 'POST', body: JSON.stringify({ location_id: loc, reason: document.getElementById('mv-reason').value || null }) });
+    toast('Оборудование перемещено', 'success');
+    closeOv('ov-move');
+    loadEquipment();
+  } catch (e) { toast('Ошибка: ' + e.message, 'error'); }
+}
+
+function openDecommModal(id) {
+  document.getElementById('dc-id').value     = id;
+  document.getElementById('dc-reason').value = '';
+  openOv('ov-decomm');
+}
+
+async function confirmDecomm() {
+  const id     = document.getElementById('dc-id').value;
+  const reason = document.getElementById('dc-reason').value.trim();
+  if (!reason) { toast('Введите причину', 'error'); return; }
+  try {
+    await api(`/api/equipment/${id}/decommission`, { method: 'POST', body: JSON.stringify({ reason }) });
+    toast('Оборудование списано', 'success');
+    closeOv('ov-decomm');
+    loadEquipment();
+  } catch (e) { toast('Ошибка: ' + e.message, 'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LOCATIONS
+// ═══════════════════════════════════════════════════════════════
+async function loadLocations() {
+  try {
+    const locs = await api('/api/equipment/locations');
+    const lm   = Object.fromEntries(locs.map(l => [l.id, l.name]));
+    const cnt  = {};
+    cachedEq.forEach(e => { if (e.location_id) cnt[e.location_id] = (cnt[e.location_id] || 0) + 1; });
+    document.getElementById('loc-tbody').innerHTML = locs.length
+      ? locs.map(l => `<tr>
+          <td class="cell-main">${escHtml(l.name)}</td>
+          <td class="muted">${escHtml(l.address || '–')}</td>
+          <td class="muted">${l.parent_location_id ? escHtml(lm[l.parent_location_id] || '–') : '–'}</td>
+          <td class="num r">${cnt[l.id] || 0}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="4" class="empty">Локации не найдены</td></tr>';
+  } catch (e) {
+    document.getElementById('loc-tbody').innerHTML = `<tr><td colspan="4" class="err-cell">${escHtml(e.message)}</td></tr>`;
+  }
+}
+
+function openLocModal() {
+  document.getElementById('loc-name').value = '';
+  document.getElementById('loc-addr').value = '';
+  document.getElementById('loc-par').value  = '';
+  openOv('ov-loc');
+}
+
+async function saveLoc() {
+  const name = document.getElementById('loc-name').value.trim();
+  if (!name) { toast('Введите название', 'error'); return; }
+  try {
+    await api('/api/equipment/locations', { method: 'POST', body: JSON.stringify({
+      name,
+      address: document.getElementById('loc-addr').value.trim() || null,
+      parent_location_id: document.getElementById('loc-par').value || null,
+    })});
+    toast('Локация добавлена', 'success');
+    closeOv('ov-loc');
+    await loadRefData();
+    loadLocations();
+  } catch (e) { toast('Ошибка: ' + e.message, 'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAINTENANCE
+// ═══════════════════════════════════════════════════════════════
+async function loadTasks() {
+  const st = document.getElementById('task-st')?.value || '';
+  const tp = document.getElementById('task-tp')?.value || '';
+  const pg = PAGES.task;
+  const p  = new URLSearchParams({ page: pg, per_page: 15 });
+  if (st) p.set('status', st);
+  if (tp) p.set('task_type', tp);
+
+  const tb = document.getElementById('task-tbody');
+  tb.innerHTML = '<tr><td colspan="8"><div class="empty"><div class="spin"></div></div></td></tr>';
+  try {
+    const r = await api(`/api/maintenance?${p}`);
+    r.items.forEach(t => { TASK_STORE[t.id] = t; });
+    if (!r.items.length) {
+      tb.innerHTML = '<tr><td colspan="8"><div class="empty">Задачи не найдены</div></td></tr>';
+      document.getElementById('task-pag').innerHTML = '';
+      return;
+    }
+    tb.innerHTML = r.items.map(t => `
+      <tr>
+        <td class="cell-main">${escHtml(t.equipment_name || '–')}</td>
+        <td>${badge(t.task_type)}</td>
+        <td>${badge(t.status)}</td>
+        <td class="${t.assigned_name ? '' : 'muted'}">${t.assigned_name ? escHtml(t.assigned_name) : 'Не назначен'}</td>
+        <td class="mono">${fmtD(t.scheduled_at)}</td>
+        <td class="mono">${t.completed_at ? fmtD(t.completed_at) : '–'}</td>
+        <td class="num r">${t.cost ? fmtC(t.cost) : '–'}</td>
+        <td><div class="row-acts">${canDo('maintenance','write') ? `<button class="btn btn-q btn-sm btn-ico" title="Редактировать" aria-label="Редактировать" onclick="openEditTaskModal('${t.id}')">${ico('pencil')}</button>` : ''}</div></td>
+      </tr>`).join('');
+    renderPag('task-pag', r.total, 15, pg, p => { PAGES.task = p; loadTasks(); });
+  } catch (e) {
+    tb.innerHTML = `<tr><td colspan="8" class="err-cell">${escHtml(e.message)}</td></tr>`;
+  }
+}
+
+async function loadTaskStats() {
+  try {
+    const s = await api('/api/maintenance/stats');
+    document.getElementById('tk-open').textContent = s.by_status?.open        || 0;
+    document.getElementById('tk-prog').textContent = s.by_status?.in_progress || 0;
+    document.getElementById('tk-done').textContent = s.by_status?.completed   || 0;
+  } catch {}
+}
+
+function openAddTaskModal() {
+  document.getElementById('task-mt').textContent       = 'Создать задачу';
+  document.getElementById('task-id').value             = '';
+  document.getElementById('task-desc').value           = '';
+  document.getElementById('task-cost').value           = '0';
+  document.getElementById('task-sched').value          = new Date().toISOString().slice(0, 16);
+  document.getElementById('task-st-sel').value         = 'open';
+  document.getElementById('task-tp-sel').selectedIndex = 0;
+  document.getElementById('task-eq').selectedIndex     = 0;
+  document.getElementById('task-asgn').selectedIndex   = 0;
+  openOv('ov-task');
+}
+
+function openEditTaskModal(id) {
+  const t = TASK_STORE[id];
+  if (!t) { toast('Данные не найдены', 'error'); return; }
+  document.getElementById('task-mt').textContent  = 'Редактировать задачу';
+  document.getElementById('task-id').value        = t.id;
+  document.getElementById('task-tp-sel').value    = t.task_type;
+  document.getElementById('task-st-sel').value    = t.status;
+  document.getElementById('task-desc').value      = t.description || '';
+  document.getElementById('task-cost').value      = t.cost || 0;
+  document.getElementById('task-sched').value     = t.scheduled_at ? t.scheduled_at.slice(0, 16) : '';
+  if (t.equipment_id) document.getElementById('task-eq').value   = t.equipment_id;
+  if (t.assigned_to)  document.getElementById('task-asgn').value = t.assigned_to;
+  else                document.getElementById('task-asgn').value = '';
+  openOv('ov-task');
+}
+
+async function saveTask() {
+  const id       = document.getElementById('task-id').value.trim();
+  const equipId  = document.getElementById('task-eq').value;
+  const schedRaw = document.getElementById('task-sched').value;
+  if (!id && !equipId) { toast('Выберите оборудование', 'error'); return; }
+  if (!schedRaw)        { toast('Укажите дату и время', 'error'); return; }
+  const body = {
+    equipment_id: equipId || undefined,
+    assigned_to:  document.getElementById('task-asgn').value || null,
+    task_type:    document.getElementById('task-tp-sel').value,
+    status:       document.getElementById('task-st-sel').value,
+    description:  document.getElementById('task-desc').value.trim() || null,
+    scheduled_at: new Date(schedRaw).toISOString(),
+    cost:         parseFloat(document.getElementById('task-cost').value) || 0,
+  };
+  try {
+    if (id) {
+      delete body.equipment_id;
+      await api(`/api/maintenance/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+      toast('Задача обновлена', 'success');
+    } else {
+      await api('/api/maintenance', { method: 'POST', body: JSON.stringify(body) });
+      toast('Задача создана', 'success');
+    }
+    closeOv('ov-task');
+    loadTasks();
+    loadTaskStats();
+  } catch (e) { toast('Ошибка: ' + e.message, 'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AUDIT
+// ═══════════════════════════════════════════════════════════════
+async function loadAudit() {
+  const op  = document.getElementById('aud-op')?.value  || '';
+  const tbl = document.getElementById('aud-tbl')?.value || '';
+  const pg  = PAGES.aud;
+  const p   = new URLSearchParams({ page: pg, per_page: 20 });
+  if (op)  p.set('operation', op);
+  if (tbl) p.set('table_name', tbl);
+
+  const tb = document.getElementById('aud-tbody');
+  tb.innerHTML = '<tr><td colspan="7"><div class="empty"><div class="spin"></div></div></td></tr>';
+  try {
+    const r      = await api(`/api/audit?${p}`);
+    const empMap = Object.fromEntries(cachedEmps.map(e => [e.id, e.full_name]));
+    r.items.forEach(a => { AUD_STORE[a.id] = a; });
+    document.getElementById('aud-tbody').innerHTML = r.items.length
+      ? r.items.map(a => `
+          <tr>
+            <td class="num muted">${a.id}</td>
+            <td class="mono">${escHtml(a.schema_name)}.${escHtml(a.table_name)}</td>
+            <td>${badge(a.operation)}</td>
+            <td class="mono muted">${escHtml(a.record_id.slice(0, 8))}…</td>
+            <td>${a.user_id ? escHtml(empMap[a.user_id] || a.user_id.slice(0, 8)) : '–'}</td>
+            <td class="mono">${fmtD(a.performed_at)}</td>
+            <td class="r"><button class="btn btn-g btn-sm" onclick="showAuditDetail(${a.id})">Открыть</button></td>
+          </tr>`).join('')
+      : '<tr><td colspan="7" class="empty">Записи не найдены</td></tr>';
+    renderPag('aud-pag', r.total, 20, pg, p => { PAGES.aud = p; loadAudit(); });
+  } catch (e) {
+    tb.innerHTML = `<tr><td colspan="7" class="err-cell">${escHtml(e.message)}</td></tr>`;
+  }
+}
+
+function showAuditDetail(id) {
+  const a = AUD_STORE[id];
+  if (!a) return;
+  const renderDiff = (old, nw) => {
+    if (!old && !nw) return '<div class="empty">Нет данных</div>';
+    const src = nw || old || {};
+    return Object.entries(src).map(([k, v]) => {
+      const ov = old?.[k], nv = nw?.[k];
+      const changed = old && nw && String(ov) !== String(nv);
+      return `<div class="diff-row${changed ? ' changed' : ''}">
+        <span class="diff-k">${escHtml(k)}</span>
+        ${old ? `<span class="diff-old">${changed ? escHtml(String(ov ?? '–')) : ''}</span>` : ''}
+        ${nw  ? `<span class="diff-new">${escHtml(String(nv ?? '–'))}</span>` : ''}
+      </div>`;
+    }).join('');
+  };
+  document.getElementById('aud-detail').innerHTML = `
+    <div class="diff-head">
+      ${badge(a.operation)}
+      <span class="mono">${escHtml(a.schema_name)}.${escHtml(a.table_name)}</span>
+      <span class="cell-sub">${fmtD(a.performed_at)}</span>
+    </div>
+    <div class="diff-wrap">${renderDiff(a.old_data, a.new_data)}</div>`;
+  openOv('ov-aud');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EMPLOYEES
+// ═══════════════════════════════════════════════════════════════
+async function loadEmployees() {
+  const tb = document.getElementById('emp-tbody');
+  tb.innerHTML = '<tr><td colspan="6"><div class="empty"><div class="spin"></div></div></td></tr>';
+  try {
+    const [emps, depts] = await Promise.all([
+      api('/api/employees'),
+      api('/api/departments').catch(() => []),
+    ]);
+    const dm = Object.fromEntries(depts.map(d => [d.id, d.name]));
+    tb.innerHTML = emps.length
+      ? emps.map(e => `<tr>
+          <td class="cell-main">${escHtml(e.full_name)}</td>
+          <td>${badge(e.role)}</td>
+          <td class="mono">${escHtml(e.email)}</td>
+          <td class="muted">${e.department_id ? escHtml(dm[e.department_id]||'–') : '–'}</td>
+          <td>${e.is_active ? '<span class="b b-active">Активен</span>' : '<span class="b b-decommissioned">Неактивен</span>'}</td>
+          <td class="mono">${fmtD(e.created_at)}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="6" class="empty">Сотрудники не найдены</td></tr>';
+  } catch (e) {
+    tb.innerHTML = `<tr><td colspan="6" class="err-cell">${escHtml(e.message)}</td></tr>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ROLES MATRIX
+// ═══════════════════════════════════════════════════════════════
+const RES_LABELS = {
+  equipment:'Оборудование', telemetry:'Телеметрия', maintenance:'Обслуживание',
+  audit:'Аудит', employees:'Сотрудники', costs:'Финансы', locations:'Локации',
+};
+const ACT_LABELS = {
+  read:'Чтение', write:'Запись', update:'Обновление', move:'Перемещение', decommission:'Списание',
+};
+
+async function loadRoleMatrix() {
+  const tb = document.getElementById('role-tbody');
+  try {
+    const mx    = await api('/api/auth/permissions');
+    const roles = ['admin','engineer','storekeeper','auditor','viewer'];
+    const resources = [...new Set(Object.values(mx).flatMap(r => Object.keys(r)))];
+    tb.innerHTML = resources.map(res => `
+      <tr>
+        <td class="cell-main">${RES_LABELS[res] || escHtml(res)}</td>
+        ${roles.map(role => {
+          const ps = mx[role]?.[res] || [];
+          return `<td class="c${ps.length ? '' : ' muted'}">${ps.length ? ps.map(a => ACT_LABELS[a] || escHtml(a)).join('<br>') : '—'}</td>`;
+        }).join('')}
+      </tr>`).join('');
+  } catch (e) {
+    tb.innerHTML = `<tr><td colspan="6" class="err-cell">${escHtml(e.message)}</td></tr>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PAGINATION
+// ═══════════════════════════════════════════════════════════════
+function renderPag(containerId, total, perPage, current, onPage) {
+  const pages = Math.ceil(total / perPage);
+  const el    = document.getElementById(containerId);
+  if (!el) return;
+  const recs = `${fmtN(total)} ${plural(total, ['запись', 'записи', 'записей'])}`;
+  if (pages <= 1) { el.innerHTML = `<span>${recs}</span>`; return; }
+  const nums = [];
+  for (let i = Math.max(1, current - 2); i <= Math.min(pages, current + 2); i++) nums.push(i);
+  const cbName = `__pag_${containerId}`;
+  window[cbName] = onPage;
+  el.innerHTML = `
+    <span>${recs} · страница ${current} из ${pages}</span>
+    <div class="pbtns">
+      <button class="pbtn" ${current===1?'disabled':''} onclick="${cbName}(${current-1})" aria-label="Предыдущая страница">${ico('chevL')}</button>
+      ${current > 3 ? `<button class="pbtn" onclick="${cbName}(1)">1</button><span class="pag-gap">…</span>` : ''}
+      ${nums.map(p => `<button class="pbtn${p===current?' act':''}" onclick="${cbName}(${p})">${p}</button>`).join('')}
+      ${current < pages-2 ? `<span class="pag-gap">…</span><button class="pbtn" onclick="${cbName}(${pages})">${pages}</button>` : ''}
+      <button class="pbtn" ${current===pages?'disabled':''} onclick="${cbName}(${current+1})" aria-label="Следующая страница">${ico('chevR')}</button>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════════════════════════════════
+function updateClock() {
+  const el = document.getElementById('tb-clock');
+  if (el) el.textContent = new Date().toLocaleString('ru-RU', {
+    day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit',
+  });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Chart defaults
+Chart.defaults.color       = '#85858b';
+Chart.defaults.font.family = 'IBM Plex Mono';
+Chart.defaults.font.size   = 11;
+
+// ═══════════════════════════════════════════════════════════════
+// THEME TOGGLE
+// ═══════════════════════════════════════════════════════════════
+// Charts read colors from CSS variables when they are built, so rebuild them after a switch
+function refreshChartTheme() {
+  Chart.defaults.color = chartTheme().tick;
+  if (document.getElementById('page-telemetry')?.classList.contains('active')) renderLiveCharts();
+  if (CHARTS['ch-hist']) loadHistChart();
+}
+
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('theme-light');
+  localStorage.setItem('smo_theme', isLight ? 'light' : 'dark');
+  refreshChartTheme();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  if (localStorage.getItem('smo_theme') === 'light') document.body.classList.add('theme-light');
+  Chart.defaults.color = chartTheme().tick;
+  tryAutoLogin();
+});
+</script>
+</body>
+</html>

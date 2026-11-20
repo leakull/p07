@@ -1,0 +1,127 @@
+services:
+  db:
+    build:
+      context: ./postgres
+    container_name: vekas_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: vekas_password
+      POSTGRES_DB: vekas_inventory
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+      - ./pgbackrest:/etc/pgbackrest
+      - backups:/backups
+    command: >
+      postgres
+      -c archive_mode=on
+      -c archive_command='pgbackrest --stanza=vekas archive-push %p'
+      -c wal_level=replica
+      -c archive_timeout=60
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d vekas_inventory"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pgbackrest-cron:
+    build:
+      context: ./postgres
+    container_name: vekas_pgbackrest_cron
+    restart: always
+    user: root
+    volumes:
+      - ./pgbackrest:/etc/pgbackrest
+      - pgdata:/var/lib/postgresql/data
+      - backups:/backups
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGUSER: admin
+      PGPASSWORD: vekas_password
+      PGDATABASE: vekas_inventory
+    entrypoint: >
+      bash -c "
+      mkdir -p /var/log/pgbackrest &&
+      until pgbackrest --stanza=vekas stanza-create; do
+        echo 'pgBackRest stanza-create failed, retrying in 5s...';
+        sleep 5;
+      done &&
+      echo '0 2 * * 0 pgbackrest --stanza=vekas backup --type=full >> /var/log/pgbackrest/cron.log 2>&1' > /tmp/crontab &&
+      echo '0 2 * * 1-6 pgbackrest --stanza=vekas backup --type=incr >> /var/log/pgbackrest/cron.log 2>&1' >> /tmp/crontab &&
+      crontab /tmp/crontab &&
+      cron -f
+      "
+    depends_on:
+      db:
+        condition: service_healthy
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: vekas_pg_exporter
+    restart: always
+    environment:
+      DATA_SOURCE_NAME: "postgresql://admin:vekas_password@db:5432/vekas_inventory?sslmode=disable"
+    ports:
+      - "9187:9187"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: vekas_app:latest
+    container_name: vekas_app
+    restart: always
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://admin:vekas_password@db:5432/vekas_inventory"
+      SECRET_KEY: "supersecretkey-change-in-production"
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: "480"
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: vekas_prometheus
+    restart: always
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - promdata:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: vekas_grafana
+    restart: always
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: vekas_admin
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafanadata:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+
+volumes:
+  pgdata:
+  backups:
+  promdata:
+  grafanadata:

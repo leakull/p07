@@ -1,0 +1,3730 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>СМО — Система мониторинга оборудования</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;500;600;700;800&family=Russo+One&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg-void:#02050a;
+  --bg-deep:#050b13;
+  --bg-panel:#091320;
+  --bg-card:#0c1a28;
+  --bg-card2:#0e1f2f;
+  --bg-hover:#12263a;
+  --bg-input:#070f1a;
+  --border:rgba(0,200,255,.08);
+  --border-md:rgba(0,200,255,.18);
+  --border-hi:rgba(0,200,255,.38);
+  --cyan:#00c8ff;
+  --cyan-dim:rgba(0,200,255,.07);
+  --cyan-glow:rgba(0,200,255,.18);
+  --amber:#ffb800;
+  --amber-dim:rgba(255,184,0,.07);
+  --amber-glow:rgba(255,184,0,.22);
+  --green:#00e676;
+  --green-dim:rgba(0,230,118,.08);
+  --red:#ff3d57;
+  --red-dim:rgba(255,61,87,.08);
+  --orange:#ff7043;
+  --purple:#b388ff;
+  --text-1:#d0ecff;
+  --text-2:#5a82a0;
+  --text-3:#243c52;
+  --font-head:'Russo One',sans-serif;
+  --font-ui:'Exo 2',sans-serif;
+  --font-mono:'Share Tech Mono',monospace;
+  --sw:240px;
+  --th:56px;
+  --r:5px;
+  --r2:8px;
+  --tr:180ms cubic-bezier(.4,0,.2,1);
+  --shadow-card:0 4px 24px rgba(0,0,0,.4),0 1px 4px rgba(0,0,0,.3);
+  --shadow-glow:0 0 24px rgba(0,200,255,.06);
+}
+
+/* ══════════════════════ WHITE THEME ══════════════════════ */
+body.theme-light {
+  --bg-void:#f0f4f8;
+  --bg-deep:#e8edf3;
+  --bg-panel:#dde4ed;
+  --bg-card:#ffffff;
+  --bg-card2:#f5f8fb;
+  --bg-hover:#e4ecf5;
+  --bg-input:#f7f9fc;
+  --border:rgba(0,100,180,.12);
+  --border-md:rgba(0,100,180,.22);
+  --border-hi:rgba(0,100,180,.45);
+  --cyan:#0077cc;
+  --cyan-dim:rgba(0,120,200,.07);
+  --cyan-glow:rgba(0,120,200,.18);
+  --amber:#d4860a;
+  --amber-dim:rgba(212,134,10,.07);
+  --amber-glow:rgba(212,134,10,.22);
+  --green:#1a7a45;
+  --green-dim:rgba(26,122,69,.08);
+  --red:#cc2236;
+  --red-dim:rgba(204,34,54,.08);
+  --orange:#c45a20;
+  --purple:#6c3fc5;
+  --text-1:#1a2d3f;
+  --text-2:#4a6580;
+  --text-3:#8ba3bc;
+  --shadow-card:0 2px 12px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.06);
+  --shadow-glow:0 0 20px rgba(0,120,200,.06);
+}
+body.theme-light::before,
+body.theme-light::after { display:none }
+body.theme-light #sidebar {
+  background:linear-gradient(180deg,#1a2d3f 0%,#152436 100%);
+  border-right-color:rgba(0,100,180,.15);
+}
+body.theme-light #sidebar::after {
+  background:linear-gradient(180deg,transparent,rgba(0,150,255,.15) 40%,rgba(0,150,255,.06) 70%,transparent);
+}
+body.theme-light .sim-box { background:rgba(0,100,180,.04); }
+body.theme-light .u-av { background:linear-gradient(135deg,rgba(0,120,200,.25),rgba(0,120,200,.1)); color:#5bc8ff; }
+body.theme-light .su { background:rgba(0,0,0,.15); }
+body.theme-light #topbar {
+  background:rgba(245,249,253,.97);
+  border-bottom-color:rgba(0,100,180,.12);
+}
+body.theme-light ::-webkit-scrollbar-thumb { background:rgba(0,100,180,.2); }
+body.theme-light ::-webkit-scrollbar-thumb:hover { background:rgba(0,100,180,.35); }
+body.theme-light .panel::before {
+  background:linear-gradient(90deg,transparent,rgba(0,120,200,.15),transparent);
+}
+body.theme-light thead tr { background:rgba(0,0,0,.03); }
+body.theme-light tbody tr:hover td { background:rgba(0,100,180,.04); }
+body.theme-light .logo-mark { color:#5bc8ff; text-shadow:0 0 20px rgba(91,200,255,.4); }
+body.theme-light .logo-sub,.body.theme-light .logo-ver { color:#6a8faa; }
+body.theme-light .u-nm { color:#d0ecff; }
+body.theme-light .u-rl { color:#5bc8ff; }
+body.theme-light .ni { color:#8ab4cc; }
+body.theme-light .ni:hover { color:#d0ecff; background:rgba(255,255,255,.07); }
+body.theme-light .ni.active { color:#5bc8ff; background:linear-gradient(90deg,rgba(91,200,255,.12),rgba(91,200,255,.02)); border-left-color:#5bc8ff; }
+body.theme-light .nav-sec { color:#4a6880; }
+body.theme-light select option { background:#ffffff; color:#1a2d3f; }
+body.theme-light .fb select,body.theme-light .fb input,
+body.theme-light .fb-select { }
+
+/* Theme toggle button */
+.theme-toggle {
+  background:transparent;
+  border:1px solid var(--border-md);
+  border-radius:var(--r);
+  padding:5px 9px;
+  cursor:pointer;
+  color:var(--text-2);
+  display:flex;align-items:center;gap:5px;
+  font-family:var(--font-mono);
+  font-size:9px;
+  letter-spacing:.8px;
+  transition:all var(--tr);
+  white-space:nowrap;
+}
+.theme-toggle:hover { border-color:var(--border-hi);color:var(--text-1);background:var(--cyan-dim); }
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  background:var(--bg-void);
+  color:var(--text-1);
+  font-family:var(--font-ui);
+  font-size:13px;
+  min-height:100vh;
+  display:flex;
+  overflow-x:hidden;
+}
+
+/* Subtle scanline overlay */
+body::after{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.025) 3px,rgba(0,0,0,.025) 4px);
+  pointer-events:none;
+  z-index:9000;
+}
+
+/* Ambient background glow */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 20%, rgba(0,200,255,.025) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 60% at 80% 80%, rgba(0,150,255,.02) 0%, transparent 60%);
+  pointer-events:none;
+  z-index:0;
+}
+
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,200,255,.15);border-radius:99px}
+::-webkit-scrollbar-thumb:hover{background:rgba(0,200,255,.3)}
+
+/* ══════════════════════ SIDEBAR ══════════════════════ */
+#sidebar{
+  width:var(--sw);
+  min-height:100vh;
+  background:linear-gradient(180deg,#04090f 0%,#030810 100%);
+  border-right:1px solid var(--border-md);
+  display:flex;
+  flex-direction:column;
+  position:fixed;
+  top:0;left:0;bottom:0;
+  z-index:100;
+  box-shadow:4px 0 32px rgba(0,0,0,.6),1px 0 0 rgba(0,200,255,.04);
+}
+
+/* Side glow accent */
+#sidebar::after{
+  content:'';
+  position:absolute;
+  top:0;right:0;
+  width:1px;height:100%;
+  background:linear-gradient(180deg,transparent,rgba(0,200,255,.2) 40%,rgba(0,200,255,.08) 70%,transparent);
+  pointer-events:none;
+}
+
+.logo-wrap{
+  padding:20px 18px 16px;
+  border-bottom:1px solid var(--border);
+  position:relative;
+  overflow:hidden;
+}
+.logo-wrap::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--cyan),transparent);
+  opacity:.7;
+}
+.logo-mark{
+  font-family:var(--font-head);
+  font-size:26px;
+  letter-spacing:5px;
+  color:var(--cyan);
+  text-shadow:0 0 20px rgba(0,200,255,.6),0 0 50px rgba(0,200,255,.2);
+  line-height:1;
+}
+.logo-sub{
+  font-family:var(--font-mono);
+  font-size:7.5px;
+  color:var(--text-3);
+  letter-spacing:1.8px;
+  margin-top:5px;
+  text-transform:uppercase;
+}
+.logo-ver{
+  position:absolute;
+  right:14px;top:22px;
+  font-family:var(--font-mono);
+  font-size:7px;
+  color:var(--text-3);
+  background:rgba(0,200,255,.05);
+  border:1px solid var(--border);
+  padding:2px 5px;
+  border-radius:3px;
+}
+
+/* Sim box */
+.sim-box{
+  margin:10px 12px 4px;
+  padding:9px 11px;
+  background:rgba(0,200,255,.03);
+  border:1px solid var(--border);
+  border-radius:var(--r2);
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-family:var(--font-mono);
+  font-size:9px;
+  color:var(--text-2);
+  transition:border-color var(--tr);
+}
+.sim-box:hover{border-color:var(--border-md)}
+.sdot{
+  width:7px;height:7px;
+  border-radius:50%;
+  background:var(--green);
+  box-shadow:0 0 8px var(--green);
+  animation:blink 2s infinite;
+  flex-shrink:0;
+}
+.sdot.off{background:var(--text-3);box-shadow:none;animation:none}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.sim-info{flex:1;line-height:1.5}
+.sim-info b{display:block;color:var(--text-1);font-size:9px}
+.sim-btn{
+  background:transparent;
+  border:1px solid var(--border-md);
+  color:var(--text-2);
+  cursor:pointer;
+  padding:3px 7px;
+  border-radius:3px;
+  font-family:var(--font-mono);
+  font-size:8px;
+  transition:all var(--tr);
+  white-space:nowrap;
+}
+.sim-btn:hover{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-dim)}
+
+/* Nav */
+.nav-sec{
+  padding:14px 14px 4px;
+  font-family:var(--font-mono);
+  font-size:7.5px;
+  letter-spacing:2.5px;
+  color:var(--text-3);
+  text-transform:uppercase;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.nav-sec::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+
+.ni{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:8px 14px;
+  cursor:pointer;
+  color:var(--text-2);
+  font-weight:500;
+  font-size:12.5px;
+  border-left:2px solid transparent;
+  transition:all var(--tr);
+  margin:1px 6px;
+  border-radius:0 var(--r) var(--r) 0;
+  user-select:none;
+  position:relative;
+}
+.ni svg{width:14px;height:14px;opacity:.45;flex-shrink:0;transition:all var(--tr)}
+.ni:hover{
+  color:var(--text-1);
+  background:rgba(0,200,255,.05);
+  border-left-color:rgba(0,200,255,.3);
+  margin-left:6px;
+}
+.ni:hover svg{opacity:.8;transform:scale(1.05)}
+.ni.active{
+  color:var(--cyan);
+  background:linear-gradient(90deg,rgba(0,200,255,.1),rgba(0,200,255,.02));
+  border-left-color:var(--cyan);
+  box-shadow:inset 0 0 20px rgba(0,200,255,.03);
+}
+.ni.active svg{opacity:1;filter:drop-shadow(0 0 5px var(--cyan))}
+
+.nbadge{
+  margin-left:auto;
+  font-family:var(--font-mono);
+  font-size:9px;
+  min-width:20px;
+  text-align:center;
+  padding:1px 5px;
+  background:rgba(255,184,0,.1);
+  border:1px solid rgba(255,184,0,.25);
+  color:var(--amber);
+  border-radius:3px;
+  transition:all .3s;
+}
+.nbadge.alert{
+  background:rgba(255,61,87,.12);
+  border-color:rgba(255,61,87,.3);
+  color:var(--red);
+  animation:pulse-badge 2s infinite;
+}
+@keyframes pulse-badge{0%,100%{box-shadow:0 0 0 0 rgba(255,61,87,.3)}50%{box-shadow:0 0 0 4px rgba(255,61,87,0)}}
+
+.ss{flex:1}
+
+/* User area */
+.su{
+  padding:12px 14px;
+  border-top:1px solid var(--border);
+  background:rgba(0,0,0,.2);
+}
+.u-chip{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.u-av{
+  width:32px;height:32px;
+  border-radius:50%;
+  background:linear-gradient(135deg,rgba(0,200,255,.2),rgba(0,200,255,.05));
+  border:1px solid var(--border-md);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-head);
+  font-size:11px;
+  color:var(--cyan);
+  flex-shrink:0;
+  box-shadow:0 0 12px rgba(0,200,255,.1);
+}
+.u-nm{font-weight:600;font-size:12.5px;color:var(--text-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.u-rl{font-family:var(--font-mono);font-size:8px;color:var(--cyan);letter-spacing:1.2px;text-transform:uppercase}
+.btn-out{
+  width:100%;
+  padding:6px;
+  background:transparent;
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  color:var(--text-2);
+  cursor:pointer;
+  font-family:var(--font-ui);
+  font-size:11px;
+  transition:all var(--tr);
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.btn-out:hover{border-color:rgba(255,61,87,.4);color:var(--red);background:var(--red-dim)}
+
+/* ══════════════════════ MAIN ══════════════════════ */
+#main{
+  margin-left:var(--sw);
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
+  overflow:hidden;
+  position:relative;
+  z-index:1;
+}
+
+#topbar{
+  height:var(--th);
+  background:rgba(5,11,19,.95);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  padding:0 24px;
+  gap:12px;
+  flex-shrink:0;
+  position:sticky;
+  top:0;z-index:50;
+  box-shadow:0 2px 20px rgba(0,0,0,.4);
+}
+
+.tb-title{
+  font-family:var(--font-head);
+  font-size:15px;
+  letter-spacing:3px;
+  color:var(--text-1);
+  text-transform:uppercase;
+  flex:1;
+}
+
+.tb-breadcrumb{
+  font-family:var(--font-mono);
+  font-size:9px;
+  color:var(--text-3);
+  letter-spacing:1px;
+}
+
+.tb-notif-btn{
+  position:relative;
+  background:transparent;
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:5px 8px;
+  cursor:pointer;
+  color:var(--text-2);
+  transition:all var(--tr);
+  display:flex;align-items:center;justify-content:center;
+}
+.tb-notif-btn:hover{border-color:var(--border-md);color:var(--text-1);background:var(--cyan-dim)}
+.tb-notif-btn.has-alerts{border-color:rgba(255,61,87,.3);color:var(--red)}
+.tb-notif-badge{
+  position:absolute;
+  top:-5px;right:-5px;
+  min-width:15px;height:15px;
+  border-radius:99px;
+  background:var(--red);
+  color:#fff;
+  font-family:var(--font-mono);
+  font-size:8px;
+  display:flex;align-items:center;justify-content:center;
+  padding:0 3px;
+  box-shadow:0 0 8px rgba(255,61,87,.5);
+  animation:pulse-badge 2s infinite;
+}
+
+.tb-clock{
+  font-family:var(--font-mono);
+  font-size:11px;
+  color:var(--text-2);
+  background:rgba(0,200,255,.04);
+  border:1px solid var(--border);
+  padding:4px 10px;
+  border-radius:var(--r);
+  letter-spacing:.5px;
+}
+
+.live-ind{
+  display:flex;align-items:center;gap:5px;
+  font-family:var(--font-mono);
+  font-size:8.5px;
+  color:var(--green);
+  background:var(--green-dim);
+  border:1px solid rgba(0,230,118,.15);
+  padding:4px 9px;
+  border-radius:var(--r);
+  letter-spacing:1.2px;
+}
+.ldot{
+  width:5px;height:5px;
+  border-radius:50%;
+  background:var(--green);
+  box-shadow:0 0 7px var(--green);
+  animation:blink 1.5s infinite;
+}
+
+#content{flex:1;overflow-y:auto;padding:22px 24px}
+
+/* ══════════════════════ PAGES ══════════════════════ */
+.page{display:none;animation:fadeUp .22s ease}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ══════════════════════ DASHBOARD TABS ══════════════════════ */
+.dash-tabs{
+  display:flex;
+  gap:4px;
+  margin-bottom:20px;
+  border-bottom:1px solid var(--border);
+  padding-bottom:0;
+}
+.dash-tab{
+  padding:9px 18px 10px;
+  font-family:var(--font-mono);
+  font-size:10px;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  color:var(--text-2);
+  cursor:pointer;
+  border-bottom:2px solid transparent;
+  transition:all var(--tr);
+  position:relative;
+  top:1px;
+  display:flex;align-items:center;gap:7px;
+  user-select:none;
+}
+.dash-tab:hover{color:var(--text-1)}
+.dash-tab.active{
+  color:var(--cyan);
+  border-bottom-color:var(--cyan);
+}
+.dash-tab-badge{
+  background:rgba(255,61,87,.12);
+  border:1px solid rgba(255,61,87,.25);
+  color:var(--red);
+  font-family:var(--font-mono);
+  font-size:8px;
+  padding:1px 5px;
+  border-radius:3px;
+  min-width:18px;
+  text-align:center;
+  transition:all .3s;
+}
+.dash-tab-badge.zero{
+  background:rgba(0,230,118,.08);
+  border-color:rgba(0,230,118,.2);
+  color:var(--green);
+}
+
+.dash-pane{display:none;animation:fadeUp .18s ease}
+.dash-pane.active{display:block}
+
+/* ══════════════════════ GRIDS ══════════════════════ */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+.g12{display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:18px}
+
+/* ══════════════════════ KPI CARDS ══════════════════════ */
+.kc{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--r2);
+  padding:15px 17px;
+  position:relative;
+  overflow:hidden;
+  transition:border-color var(--tr),box-shadow var(--tr),transform var(--tr);
+  box-shadow:var(--shadow-card);
+}
+.kc::after{
+  content:'';
+  position:absolute;
+  bottom:0;left:0;right:0;
+  height:2px;
+  background:var(--ac,var(--cyan));
+  opacity:.2;
+  transition:opacity var(--tr);
+}
+.kc::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.04),transparent);
+}
+.kc:hover{
+  border-color:var(--border-md);
+  box-shadow:var(--shadow-card),var(--shadow-glow);
+}
+.kc:hover::after{opacity:.35}
+.kc-lbl{
+  font-family:var(--font-mono);
+  font-size:8px;
+  letter-spacing:1.8px;
+  color:var(--text-3);
+  text-transform:uppercase;
+  margin-bottom:9px;
+}
+.kc-val{
+  font-family:var(--font-mono);
+  font-size:32px;
+  color:var(--text-1);
+  line-height:1;
+  margin-bottom:5px;
+  transition:color .3s;
+}
+.kc-sub{font-size:10px;color:var(--text-3)}
+.kc-trend{
+  position:absolute;
+  right:14px;top:14px;
+  font-family:var(--font-mono);
+  font-size:9px;
+  padding:2px 6px;
+  border-radius:3px;
+}
+.trend-up{background:rgba(0,230,118,.1);color:var(--green)}
+.trend-dn{background:rgba(255,61,87,.1);color:var(--red)}
+
+/* ══════════════════════ PANELS ══════════════════════ */
+.panel{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--r2);
+  overflow:hidden;
+  position:relative;
+  margin-bottom:18px;
+  box-shadow:var(--shadow-card);
+}
+.panel::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,200,255,.2),transparent);
+  z-index:1;
+}
+.ph{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:12px 17px;
+  border-bottom:1px solid var(--border);
+  gap:8px;
+  background:rgba(0,0,0,.15);
+}
+.pt{
+  font-family:var(--font-head);
+  font-size:11.5px;
+  letter-spacing:1.8px;
+  text-transform:uppercase;
+  color:var(--text-1);
+  display:flex;align-items:center;gap:8px;
+}
+.ptd{
+  width:5px;height:5px;
+  border-radius:50%;
+  background:var(--cyan);
+  box-shadow:0 0 8px var(--cyan);
+}
+.pa{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.pb{padding:16px 17px}
+
+/* Sec head */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.st{
+  font-family:var(--font-head);
+  font-size:18px;
+  letter-spacing:2.5px;
+  text-transform:uppercase;
+  color:var(--text-1);
+}
+
+/* ══════════════════════ TABLE ══════════════════════ */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead tr{background:rgba(0,0,0,.25)}
+th{
+  font-family:var(--font-mono);
+  font-size:8px;
+  letter-spacing:1.8px;
+  color:var(--text-3);
+  text-transform:uppercase;
+  padding:10px 14px;
+  text-align:left;
+  border-bottom:1px solid var(--border);
+  white-space:nowrap;
+}
+td{
+  padding:10px 14px;
+  border-bottom:1px solid rgba(0,200,255,.035);
+  font-size:12px;
+  white-space:nowrap;
+}
+tr:last-child td{border-bottom:none}
+tbody tr{transition:background var(--tr)}
+tbody tr:hover td{background:rgba(0,200,255,.025)}
+.mono{font-family:var(--font-mono);font-size:11px}
+
+/* ══════════════════════ BADGES ══════════════════════ */
+.b{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:2px 7px;
+  border-radius:3px;
+  font-family:var(--font-mono);
+  font-size:8px;
+  letter-spacing:.4px;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.b::before{content:'■';font-size:4px}
+.b-active{background:rgba(0,230,118,.08);color:var(--green);border:1px solid rgba(0,230,118,.18)}
+.b-maintenance{background:rgba(255,184,0,.08);color:var(--amber);border:1px solid rgba(255,184,0,.18)}
+.b-requires_maintenance{background:rgba(255,112,67,.08);color:var(--orange);border:1px solid rgba(255,112,67,.18)}
+.b-in_repair{background:rgba(255,61,87,.08);color:var(--red);border:1px solid rgba(255,61,87,.18)}
+.b-decommissioned{background:rgba(45,74,94,.15);color:var(--text-3);border:1px solid var(--border)}
+.b-storage{background:rgba(0,200,255,.07);color:var(--cyan);border:1px solid rgba(0,200,255,.18)}
+.b-open{background:rgba(255,184,0,.08);color:var(--amber);border:1px solid rgba(255,184,0,.18)}
+.b-in_progress{background:rgba(0,200,255,.07);color:var(--cyan);border:1px solid rgba(0,200,255,.18)}
+.b-completed{background:rgba(0,230,118,.08);color:var(--green);border:1px solid rgba(0,230,118,.18)}
+.b-cancelled{background:rgba(45,74,94,.15);color:var(--text-3);border:1px solid var(--border)}
+.b-preventive{background:rgba(0,200,255,.07);color:var(--cyan);border:1px solid rgba(0,200,255,.18)}
+.b-corrective{background:rgba(255,61,87,.08);color:var(--red);border:1px solid rgba(255,61,87,.18)}
+.b-inspection{background:rgba(179,136,255,.08);color:var(--purple);border:1px solid rgba(179,136,255,.18)}
+.b-I{background:rgba(0,230,118,.08);color:var(--green);border:1px solid rgba(0,230,118,.18)}
+.b-U{background:rgba(255,184,0,.08);color:var(--amber);border:1px solid rgba(255,184,0,.18)}
+.b-D{background:rgba(255,61,87,.08);color:var(--red);border:1px solid rgba(255,61,87,.18)}
+.b-admin{background:rgba(255,61,87,.08);color:var(--red);border:1px solid rgba(255,61,87,.18)}
+.b-engineer{background:rgba(0,200,255,.07);color:var(--cyan);border:1px solid rgba(0,200,255,.18)}
+.b-storekeeper{background:rgba(179,136,255,.08);color:var(--purple);border:1px solid rgba(179,136,255,.18)}
+.b-auditor{background:rgba(0,230,118,.08);color:var(--green);border:1px solid rgba(0,230,118,.18)}
+.b-viewer{background:rgba(45,74,94,.15);color:var(--text-2);border:1px solid var(--border)}
+
+/* ══════════════════════ BUTTONS ══════════════════════ */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 14px;
+  border-radius:var(--r);
+  font-family:var(--font-ui);
+  font-size:12px;
+  font-weight:500;
+  cursor:pointer;
+  border:none;
+  transition:all var(--tr);
+  white-space:nowrap;
+  outline:none;
+}
+.btn-p{
+  background:linear-gradient(135deg,rgba(0,200,255,.18),rgba(0,200,255,.08));
+  border:1px solid var(--border-hi);
+  color:var(--cyan);
+}
+.btn-p:hover{
+  background:linear-gradient(135deg,rgba(0,200,255,.28),rgba(0,200,255,.12));
+  box-shadow:0 0 16px rgba(0,200,255,.18),0 2px 8px rgba(0,0,0,.3);
+  transform:translateY(-1px);
+}
+.btn-g{
+  background:transparent;
+  border:1px solid var(--border);
+  color:var(--text-2);
+}
+.btn-g:hover{border-color:var(--border-hi);color:var(--text-1);background:var(--cyan-dim)}
+.btn-d{
+  background:transparent;
+  border:1px solid rgba(255,61,87,.25);
+  color:var(--red);
+}
+.btn-d:hover{background:var(--red-dim);border-color:rgba(255,61,87,.4)}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn-ico{padding:5px;border-radius:var(--r)}
+
+/* ══════════════════════ INPUTS ══════════════════════ */
+input,select,textarea{
+  background:var(--bg-input);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  color:var(--text-1);
+  padding:7px 11px;
+  font-family:var(--font-ui);
+  font-size:12px;
+  outline:none;
+  transition:border-color var(--tr),box-shadow var(--tr);
+  width:100%;
+}
+select{
+  -webkit-appearance:none;
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%235a82a0' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 10px center;
+  padding-right:28px;
+  cursor:pointer;
+}
+body.theme-light select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%234a6580' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+}
+input::placeholder{color:var(--text-3)}
+input:focus,select:focus,textarea:focus{
+  border-color:rgba(0,200,255,.4);
+  box-shadow:0 0 0 3px rgba(0,200,255,.07);
+}
+select option{background:#0c1a28}
+label{
+  font-size:10px;
+  color:var(--text-2);
+  display:block;
+  margin-bottom:4px;
+  font-family:var(--font-mono);
+  letter-spacing:.6px;
+}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fg{margin-bottom:12px}
+.sw{position:relative}
+.sw input{padding-left:30px}
+.si{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text-3);width:13px;height:13px;pointer-events:none}
+
+/* ══════════════════════ MODAL ══════════════════════ */
+.ov{
+  position:fixed;inset:0;
+  background:rgba(2,5,10,.88);
+  backdrop-filter:blur(8px);
+  z-index:200;
+  display:none;align-items:center;justify-content:center;
+}
+.ov.open{display:flex}
+.modal{
+  background:var(--bg-card);
+  border:1px solid var(--border-md);
+  border-radius:var(--r2);
+  width:520px;
+  max-width:95vw;
+  max-height:92vh;
+  overflow-y:auto;
+  animation:mIn .2s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 24px 80px rgba(0,0,0,.85),0 0 60px rgba(0,200,255,.04),0 0 0 1px rgba(0,200,255,.05);
+}
+@keyframes mIn{from{transform:scale(.94) translateY(14px);opacity:0}to{transform:none;opacity:1}}
+.mh{
+  padding:17px 22px 13px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(0,0,0,.18);
+  position:relative;
+}
+.mh::after{
+  content:'';
+  position:absolute;bottom:-1px;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--border-hi),transparent);
+}
+.mt{
+  font-family:var(--font-head);
+  font-size:14px;
+  letter-spacing:1.8px;
+  text-transform:uppercase;
+  color:var(--text-1);
+}
+.mb{padding:17px 22px}
+.mf{
+  padding:13px 22px;
+  border-top:1px solid var(--border);
+  display:flex;justify-content:flex-end;gap:8px;
+  background:rgba(0,0,0,.12);
+}
+
+/* ══════════════════════ PAGINATION ══════════════════════ */
+.pag{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 14px;
+  border-top:1px solid var(--border);
+  font-family:var(--font-mono);
+  font-size:9.5px;
+  color:var(--text-3);
+}
+.pbtns{display:flex;gap:3px}
+.pbtn{
+  padding:3px 8px;
+  border-radius:3px;
+  border:1px solid var(--border);
+  background:transparent;
+  color:var(--text-2);
+  cursor:pointer;
+  font-family:var(--font-mono);
+  font-size:9.5px;
+  transition:all var(--tr);
+}
+.pbtn:hover{border-color:var(--cyan);color:var(--cyan)}
+.pbtn.act{background:rgba(0,200,255,.12);border-color:var(--cyan);color:var(--cyan)}
+.pbtn:disabled{opacity:.25;cursor:not-allowed}
+
+/* ══════════════════════ TOASTS ══════════════════════ */
+#toasts{
+  position:fixed;bottom:20px;right:20px;
+  z-index:999;
+  display:flex;flex-direction:column;gap:6px;
+  pointer-events:none;
+}
+.toast{
+  background:var(--bg-card2);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:10px 14px;
+  font-size:12px;
+  min-width:220px;max-width:340px;
+  animation:tIn .22s ease;
+  pointer-events:all;
+  display:flex;align-items:center;gap:8px;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+}
+.t-ok{border-left:2px solid var(--green)}
+.t-err{border-left:2px solid var(--red)}
+.t-info{border-left:2px solid var(--cyan)}
+@keyframes tIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+
+/* ══════════════════════ FILTER BAR ══════════════════════ */
+.fb{
+  display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+  padding:10px 14px;
+  border-bottom:1px solid var(--border);
+  background:rgba(0,0,0,.12);
+}
+.fb select,.fb input,
+.fb-select {
+  width:auto;min-width:115px;flex:1;max-width:200px;
+  border-color:var(--border-md);
+  font-family:var(--font-mono);
+  font-size:11px;
+  letter-spacing:.3px;
+}
+.fb select:hover,.fb input:hover,
+.fb-select:hover { border-color:var(--border-hi); }
+
+/* ══════════════════════ LIVE METRIC CARDS ══════════════════════ */
+.lmc{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--r2);
+  padding:13px 15px;
+  position:relative;overflow:hidden;
+  transition:all var(--tr);
+  box-shadow:var(--shadow-card);
+}
+.lmc:hover{border-color:var(--border-md)}
+.lmc.warn{
+  border-color:rgba(255,61,87,.3) !important;
+  box-shadow:var(--shadow-card),0 0 20px rgba(255,61,87,.08) !important;
+}
+.lmc.warn-lo{
+  border-color:rgba(255,184,0,.3) !important;
+  box-shadow:var(--shadow-card),0 0 20px rgba(255,184,0,.08) !important;
+}
+.lmc-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px}
+.lmc-nm{font-family:var(--font-mono);font-size:8px;letter-spacing:1.2px;color:var(--text-3);text-transform:uppercase;line-height:1.4}
+.lmc-eq{font-size:9px;color:var(--text-2);margin-top:2px}
+.lmc-vl{
+  font-family:var(--font-mono);
+  font-size:28px;
+  color:var(--text-1);
+  line-height:1;
+  transition:color .3s;
+}
+.lmc-vl.hi{color:var(--red);text-shadow:0 0 14px rgba(255,61,87,.35)}
+.lmc-vl.lo{color:var(--amber);text-shadow:0 0 14px rgba(255,184,0,.35)}
+.lmc-unit{font-size:10px;color:var(--text-3);margin-left:3px}
+.lmc-bar{margin-top:8px}
+.lmc-trk{height:3px;background:var(--bg-panel);border-radius:2px;overflow:hidden}
+.lmc-fill{height:100%;border-radius:2px;background:var(--cyan);transition:width .5s,background .3s}
+.lmc-fill.hi{background:var(--red)}.lmc-fill.lo{background:var(--amber)}
+.lmc-rng{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:7px;color:var(--text-3);margin-top:3px}
+.lmc-ld{
+  width:6px;height:6px;
+  border-radius:50%;
+  background:var(--green);
+  box-shadow:0 0 7px var(--green);
+  animation:blink 1.5s infinite;
+  flex-shrink:0;
+  margin-top:2px;
+}
+.lmc-ld.warn{background:var(--red);box-shadow:0 0 7px var(--red)}
+.lmc-ld.warn-lo{background:var(--amber);box-shadow:0 0 7px var(--amber)}
+
+/* ══════════════════════ LIVE CHARTS ══════════════════════ */
+.lcg{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:18px}
+.lcp{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--r2);
+  overflow:hidden;position:relative;
+  box-shadow:var(--shadow-card);
+  transition:border-color var(--tr);
+}
+.lcp::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--cyan-glow),transparent);
+}
+.lcp-h{
+  padding:9px 14px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+  background:rgba(0,0,0,.18);
+}
+.lcp-t{font-family:var(--font-mono);font-size:9px;letter-spacing:.8px;color:var(--text-2);flex:1;text-transform:uppercase}
+.lcp-v{
+  font-family:var(--font-mono);
+  font-size:16px;
+  color:var(--cyan);
+  min-width:65px;
+  text-align:right;
+  transition:color .3s;
+}
+.lcp-v.hi{color:var(--red)}.lcp-v.lo{color:var(--amber)}
+.lcp-c{padding:7px 10px 9px;height:95px}
+
+/* ══════════════════════ NOTIFICATIONS ══════════════════════ */
+.notif-list{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  padding:16px 17px;
+}
+
+.notif-card{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  padding:12px 14px;
+  border-radius:var(--r);
+  border:1px solid transparent;
+  background:var(--bg-card2);
+  transition:all var(--tr);
+  position:relative;
+  overflow:hidden;
+  animation:fadeUp .2s ease;
+}
+.notif-card::before{
+  content:'';
+  position:absolute;
+  left:0;top:0;bottom:0;
+  width:3px;
+  background:var(--nc,var(--cyan));
+  border-radius:3px 0 0 3px;
+}
+.notif-card.notif-hi{
+  --nc:var(--red);
+  border-color:rgba(255,61,87,.12);
+  background:rgba(255,61,87,.03);
+}
+.notif-card.notif-lo{
+  --nc:var(--amber);
+  border-color:rgba(255,184,0,.12);
+  background:rgba(255,184,0,.03);
+}
+.notif-card.notif-ack{
+  opacity:.4;
+  filter:grayscale(.5);
+}
+
+.notif-icon{
+  width:28px;height:28px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;
+  flex-shrink:0;
+}
+.notif-icon-hi{background:rgba(255,61,87,.1);color:var(--red)}
+.notif-icon-lo{background:rgba(255,184,0,.1);color:var(--amber)}
+
+.notif-body{flex:1;min-width:0}
+.notif-title{
+  font-weight:600;
+  font-size:12.5px;
+  color:var(--text-1);
+  margin-bottom:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.notif-meta{
+  font-family:var(--font-mono);
+  font-size:9px;
+  color:var(--text-2);
+  margin-bottom:5px;
+  display:flex;gap:10px;flex-wrap:wrap;
+}
+.notif-val{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  font-family:var(--font-mono);
+  font-size:10px;
+  padding:2px 8px;
+  border-radius:3px;
+  border:1px solid transparent;
+}
+.notif-val-hi{background:rgba(255,61,87,.08);border-color:rgba(255,61,87,.2);color:var(--red)}
+.notif-val-lo{background:rgba(255,184,0,.08);border-color:rgba(255,184,0,.2);color:var(--amber)}
+
+.notif-time{
+  font-family:var(--font-mono);
+  font-size:8px;
+  color:var(--text-3);
+  white-space:nowrap;
+  flex-shrink:0;
+  padding-top:2px;
+}
+.notif-ack-btn{
+  background:transparent;
+  border:1px solid var(--border);
+  color:var(--text-3);
+  cursor:pointer;
+  padding:2px 7px;
+  border-radius:3px;
+  font-family:var(--font-mono);
+  font-size:8px;
+  transition:all var(--tr);
+  white-space:nowrap;
+  flex-shrink:0;
+}
+.notif-ack-btn:hover{border-color:var(--border-md);color:var(--text-2)}
+
+.notif-empty{
+  text-align:center;
+  padding:48px 20px;
+  color:var(--text-3);
+  font-family:var(--font-mono);
+  font-size:10px;
+  letter-spacing:1px;
+  line-height:2.5;
+}
+.notif-empty-icon{
+  font-size:32px;
+  opacity:.25;
+  display:block;
+  margin-bottom:8px;
+}
+
+.notif-toolbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:10px 17px;
+  border-bottom:1px solid var(--border);
+  background:rgba(0,0,0,.12);
+  gap:10px;
+}
+.notif-stats{
+  display:flex;
+  gap:12px;
+  font-family:var(--font-mono);
+  font-size:9px;
+  color:var(--text-2);
+}
+.notif-stats span{
+  display:flex;align-items:center;gap:4px;
+}
+.notif-stats .ns-hi{color:var(--red)}
+.notif-stats .ns-lo{color:var(--amber)}
+.notif-stats .ns-total{color:var(--text-2)}
+
+/* ══════════════════════ EMPTY ══════════════════════ */
+.empty{
+  text-align:center;
+  padding:44px 16px;
+  color:var(--text-3);
+  font-family:var(--font-mono);
+  font-size:10px;
+  letter-spacing:1px;
+}
+.spin{
+  width:16px;height:16px;
+  border:2px solid var(--border);
+  border-top-color:var(--cyan);
+  border-radius:50%;
+  animation:spin .5s linear infinite;
+  margin:0 auto;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ══════════════════════ STATUS BARS ══════════════════════ */
+.sbar-wrap{padding:16px 18px}
+.sbar-item{margin-bottom:14px}
+.sbar-hd{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:5px;
+  font-family:var(--font-mono);
+  font-size:10px;
+}
+.sbar-lbl{color:var(--text-2)}
+.sbar-cnt{color:var(--text-3)}
+.sbar-track{
+  height:5px;
+  background:rgba(0,0,0,.4);
+  border-radius:3px;
+  overflow:hidden;
+  position:relative;
+}
+.sbar-fill{
+  height:100%;
+  border-radius:3px;
+  transition:width .8s cubic-bezier(.4,0,.2,1);
+  position:relative;
+}
+.sbar-fill::after{
+  content:'';
+  position:absolute;
+  top:0;right:0;bottom:0;width:6px;
+  background:rgba(255,255,255,.25);
+  border-radius:0 3px 3px 0;
+}
+
+/* ══════════════════════ LOGIN ══════════════════════ */
+#ls{
+  position:fixed;inset:0;z-index:500;
+  background:var(--bg-void);
+  display:flex;align-items:center;justify-content:center;
+  background-image:
+    radial-gradient(circle at 25% 35%, rgba(0,200,255,.05),transparent 50%),
+    radial-gradient(circle at 75% 65%, rgba(0,100,200,.03),transparent 50%);
+}
+#ls::before{
+  content:'';position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(0,200,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,200,255,.025) 1px,transparent 1px);
+  background-size:48px 48px;
+  pointer-events:none;
+}
+.lb{
+  width:400px;
+  background:var(--bg-card);
+  border:1px solid var(--border-md);
+  border-radius:var(--r2);
+  padding:36px 30px;
+  position:relative;
+  box-shadow:0 40px 100px rgba(0,0,0,.9),0 0 80px rgba(0,200,255,.04);
+  animation:fadeUp .35s ease;
+}
+.lb::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent 10%,var(--cyan) 50%,transparent 90%);
+}
+.ll{text-align:center;margin-bottom:28px}
+.lm{
+  font-family:var(--font-head);
+  font-size:42px;
+  letter-spacing:8px;
+  color:var(--cyan);
+  text-shadow:0 0 30px rgba(0,200,255,.7),0 0 80px rgba(0,200,255,.2);
+  display:block;line-height:1;
+}
+.ls2{font-family:var(--font-mono);font-size:8px;letter-spacing:3px;color:var(--text-3);text-transform:uppercase;display:block;margin-top:7px}
+.lo{font-size:10px;color:var(--text-2);display:block;margin-top:4px}
+hr.sep{border:none;border-top:1px solid var(--border);margin:18px 0}
+.demo-box{background:rgba(0,200,255,.02);border:1px solid var(--border);border-radius:var(--r);padding:9px 11px;margin-top:14px}
+.demo-t{font-family:var(--font-mono);font-size:7px;letter-spacing:1.8px;color:var(--text-3);text-transform:uppercase;margin-bottom:6px}
+.demo-r{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:9.5px;color:var(--text-2);padding:2px 0}
+.demo-r b{color:var(--cyan);cursor:pointer;transition:color var(--tr)}
+.demo-r b:hover{color:var(--text-1)}
+
+/* ══════════════════════ RESPONSIVE ══════════════════════ */
+@media(max-width:1200px){
+  .g4{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:900px){
+  .g2,.g12{grid-template-columns:1fr}
+  .lcg{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="ls">
+  <div class="lb">
+    <div class="ll">
+      <span class="lm">СМО</span>
+      <span class="ls2">Система Мониторинга Оборудования</span>
+      <span class="lo">ООО «ТехноПром» · Москва</span>
+    </div>
+    <div class="fg"><label>Электронная почта</label><input type="email" id="l-em" value="admin@company.com" placeholder="user@company.com"/></div>
+    <div class="fg"><label>Пароль</label><input type="password" id="l-pw" value="admin123" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+    <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:4px;padding:9px" onclick="doLogin()">Войти в систему</button>
+    <hr class="sep"/>
+    <div class="demo-box">
+      <div class="demo-t">Демо-аккаунты</div>
+      <div class="demo-r"><span>Администратор</span><b onclick="setDemo('admin@company.com','admin123')">admin / admin123</b></div>
+      <div class="demo-r"><span>Инженер</span><b onclick="setDemo('engineer@company.com','eng123')">engineer / eng123</b></div>
+      <div class="demo-r"><span>Кладовщик</span><b onclick="setDemo('store@company.com','store123')">store / store123</b></div>
+      <div class="demo-r"><span>Аудитор</span><b onclick="setDemo('auditor@company.com','audit123')">auditor / audit123</b></div>
+      <div class="demo-r"><span>Наблюдатель</span><b onclick="setDemo('viewer@company.com','view123')">viewer / view123</b></div>
+    </div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<aside id="sidebar">
+  <div class="logo-wrap">
+    <div class="logo-mark">СМО</div>
+    <div class="logo-sub">Мониторинг оборудования</div>
+    <div class="logo-ver">v2.0</div>
+  </div>
+
+  <div class="sim-box">
+    <div class="sdot" id="sdot"></div>
+    <div class="sim-info">
+      <b id="sim-status-txt">Симулятор активен</b>
+      <span id="sim-freq-txt">Интервал: 2 сек</span>
+    </div>
+    <button class="sim-btn" onclick="toggleSimulator()" id="sim-btn-toggle">Пауза</button>
+  </div>
+
+  <div class="nav-sec">Главное</div>
+  <div class="ni active" onclick="showPage('dashboard')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Информационная панель
+    <span class="nbadge alert" id="nb-notif" style="display:none">0</span>
+  </div>
+
+  <div class="nav-sec">Инвентаризация</div>
+  <div class="ni" onclick="showPage('equipment')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    Оборудование<span class="nbadge" id="nb-eq">–</span>
+  </div>
+  <div class="ni" onclick="showPage('locations')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+    Локации
+  </div>
+
+  <div class="nav-sec">Мониторинг</div>
+  <div class="ni" onclick="showPage('telemetry')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>
+    Телеметрия<span class="nbadge" id="nb-live" style="background:rgba(0,230,118,.1);border-color:rgba(0,230,118,.25);color:var(--green)">LIVE</span>
+  </div>
+  <div class="ni" onclick="showPage('maintenance')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+    Обслуживание<span class="nbadge" id="nb-tasks">–</span>
+  </div>
+
+  <div class="nav-sec">Администрирование</div>
+  <div class="ni" id="nav-audit" onclick="showPage('audit')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    Журнал аудита
+  </div>
+  <div class="ni" id="nav-emp" onclick="showPage('employees')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+    Сотрудники
+  </div>
+  <div class="ni" onclick="showPage('roles')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+    Матрица прав доступа
+  </div>
+
+  <div class="ss"></div>
+  <div class="su">
+    <div class="u-chip">
+      <div class="u-av" id="u-av">–</div>
+      <div><div class="u-nm" id="u-nm">–</div><div class="u-rl" id="u-rl">–</div></div>
+    </div>
+    <button class="btn-out" onclick="logout()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Выйти из системы
+    </button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div id="main">
+  <div id="topbar">
+    <div>
+      <div class="tb-title" id="tb-title">ИНФОРМАЦИОННАЯ ПАНЕЛЬ</div>
+    </div>
+
+    <!-- Notification button in topbar -->
+    <button class="tb-notif-btn" id="tb-notif-btn" onclick="showPage('dashboard');setTimeout(()=>switchDashTab('notifications'),100)" title="Уведомления">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>
+      </svg>
+      <span class="tb-notif-badge" id="tb-notif-badge" style="display:none">0</span>
+    </button>
+
+    <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Переключить тему">
+      <span id="theme-icon">☀</span>
+      <span id="theme-label">СВЕТЛАЯ</span>
+    </button>
+
+    <div class="live-ind"><div class="ldot"></div>ОНЛАЙН</div>
+    <div class="tb-clock" id="tb-clock">00:00:00</div>
+  </div>
+
+  <div id="content">
+
+    <!-- ══ ДАШБОРД ══ -->
+    <div class="page active" id="page-dashboard">
+
+      <!-- Dashboard Tabs -->
+      <div class="dash-tabs">
+        <div class="dash-tab active" id="dtab-overview" onclick="switchDashTab('overview')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Обзор
+        </div>
+        <div class="dash-tab" id="dtab-notifications" onclick="switchDashTab('notifications')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          Уведомления
+          <span class="dash-tab-badge zero" id="dash-tab-notif-badge">0</span>
+        </div>
+      </div>
+
+      <!-- ── OVERVIEW PANE ── -->
+      <div class="dash-pane active" id="dpane-overview">
+
+        <!-- KPI row 1 -->
+        <div class="g4">
+          <div class="kc" style="--ac:var(--cyan)">
+            <div class="kc-lbl">Всего оборудования</div>
+            <div class="kc-val" id="d-total">–</div>
+            <div class="kc-sub">единиц в реестре</div>
+          </div>
+          <div class="kc" style="--ac:var(--green)">
+            <div class="kc-lbl">Активное</div>
+            <div class="kc-val" style="color:var(--green)" id="d-active">–</div>
+            <div class="kc-sub">в эксплуатации</div>
+          </div>
+          <div class="kc" style="--ac:var(--red)">
+            <div class="kc-lbl">В ремонте / Требует ТО</div>
+            <div class="kc-val" style="color:var(--red)" id="d-repair">–</div>
+            <div class="kc-sub" id="d-maint-sub">требует внимания</div>
+          </div>
+          <div class="kc" style="--ac:var(--amber)">
+            <div class="kc-lbl">Открытых задач на ТО</div>
+            <div class="kc-val" style="color:var(--amber)" id="d-tasks">–</div>
+            <div class="kc-sub">в очереди</div>
+          </div>
+        </div>
+
+        <!-- KPI row 2 -->
+        <div class="g4">
+          <div class="kc" style="--ac:var(--cyan)">
+            <div class="kc-lbl">На складе</div>
+            <div class="kc-val" style="color:var(--cyan);font-size:26px" id="d-storage">–</div>
+            <div class="kc-sub">не в эксплуатации</div>
+          </div>
+          <div class="kc" style="--ac:var(--text-3)">
+            <div class="kc-lbl">Списано</div>
+            <div class="kc-val" style="color:var(--text-3);font-size:26px" id="d-decomm">–</div>
+            <div class="kc-sub">выведено из строя</div>
+          </div>
+          <div class="kc" style="--ac:var(--amber)">
+            <div class="kc-lbl">Закупочная стоимость</div>
+            <div class="kc-val" style="color:var(--amber);font-size:20px;letter-spacing:0" id="d-cost">–</div>
+            <div class="kc-sub">суммарно по реестру</div>
+          </div>
+          <div class="kc" style="--ac:var(--cyan)">
+            <div class="kc-lbl">Остаточная стоимость</div>
+            <div class="kc-val" style="color:var(--cyan);font-size:20px;letter-spacing:0" id="d-res">–</div>
+            <div class="kc-sub" id="d-depr-sub">амортизация</div>
+          </div>
+        </div>
+
+        <!-- Live sensors strip -->
+        <div class="panel" style="margin-bottom:16px">
+          <div class="ph">
+            <div class="pt">
+              <div class="ptd"></div>
+              Датчики — прямой эфир
+              <span style="font-family:var(--font-mono);font-size:7.5px;color:var(--text-3);margin-left:8px;letter-spacing:1.2px">ОБНОВЛЯЕТСЯ В РЕАЛЬНОМ ВРЕМЕНИ</span>
+            </div>
+            <button class="btn btn-g btn-sm" onclick="showPage('telemetry')">Открыть монитор →</button>
+          </div>
+          <div style="padding:14px"><div id="dash-live-metrics" class="g4" style="margin:0"></div></div>
+        </div>
+
+        <!-- Charts row -->
+        <div class="g2" style="margin-bottom:16px">
+          <div class="panel" style="margin:0">
+            <div class="ph"><div class="pt"><div class="ptd"></div>Статус оборудования</div></div>
+            <div style="padding:16px;height:220px"><canvas id="ch-eq-status"></canvas></div>
+          </div>
+          <div class="panel" style="margin:0">
+            <div class="ph"><div class="pt"><div class="ptd"></div>Оборудование по типам</div></div>
+            <div style="padding:16px;height:220px"><canvas id="ch-eq-type"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Tasks charts -->
+        <div class="g2" style="margin-bottom:16px">
+          <div class="panel" style="margin:0">
+            <div class="ph"><div class="pt"><div class="ptd"></div>Задачи ТО по статусу</div></div>
+            <div style="padding:16px;height:190px"><canvas id="ch-task-status"></canvas></div>
+          </div>
+          <div class="panel" style="margin:0">
+            <div class="ph"><div class="pt"><div class="ptd"></div>Задачи ТО по типу</div></div>
+            <div style="padding:16px;height:190px"><canvas id="ch-task-type"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Bottom row: status bars + recent list -->
+        <div class="g2">
+          <div class="panel" style="margin:0">
+            <div class="ph"><div class="pt"><div class="ptd"></div>Сводка по статусам</div></div>
+            <div class="sbar-wrap" id="dash-status-bars">
+              <div class="empty" style="padding:20px">Загрузка…</div>
+            </div>
+          </div>
+          <div class="panel" style="margin:0">
+            <div class="ph">
+              <div class="pt"><div class="ptd"></div>Последние изменения</div>
+              <button class="btn btn-g btn-sm" onclick="showPage('equipment')">Все →</button>
+            </div>
+            <div class="tw">
+              <table>
+                <thead><tr><th>Оборудование</th><th>Статус</th><th>Тип</th><th>Моточасы</th></tr></thead>
+                <tbody id="dash-eq-list"><tr><td colspan="4" class="empty">Загрузка…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /dpane-overview -->
+
+      <!-- ── NOTIFICATIONS PANE ── -->
+      <div class="dash-pane" id="dpane-notifications">
+        <div class="panel" style="margin:0">
+          <div class="ph">
+            <div class="pt">
+              <div class="ptd" style="background:var(--red);box-shadow:0 0 8px var(--red)"></div>
+              Уведомления о превышении порогов
+            </div>
+            <div class="pa">
+              <span id="notif-summary" style="font-family:var(--font-mono);font-size:9px;color:var(--text-2)">–</span>
+              <button class="btn btn-g btn-sm" onclick="ackAllNotifs()">Подтвердить все</button>
+              <button class="btn btn-d btn-sm" onclick="clearAllNotifs()">Очистить</button>
+            </div>
+          </div>
+
+          <!-- Filter toolbar -->
+          <div class="notif-toolbar">
+            <div class="notif-stats">
+              <span class="ns-hi">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                Критических: <b id="ns-hi-cnt">0</b>
+              </span>
+              <span class="ns-lo">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                Предупреждений: <b id="ns-lo-cnt">0</b>
+              </span>
+              <span class="ns-total">Всего: <b id="ns-total-cnt">0</b></span>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <select id="notif-filter-type" onchange="renderNotifications()" class="fb-select" style="min-width:130px">
+                <option value="">Все типы</option>
+                <option value="hi">Превышение максимума</option>
+                <option value="lo">Ниже минимума</option>
+              </select>
+              <select id="notif-filter-ack" onchange="renderNotifications()" class="fb-select" style="min-width:130px">
+                <option value="unread">Непрочитанные</option>
+                <option value="">Все</option>
+                <option value="ack">Подтверждённые</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="notif-list-wrap">
+            <div class="notif-empty">
+              <span class="notif-empty-icon">🔔</span>
+              Уведомлений нет<br>
+              <span style="font-size:8px;opacity:.6">Пороговые значения не превышены</span>
+            </div>
+          </div>
+        </div>
+      </div><!-- /dpane-notifications -->
+
+    </div><!-- /page-dashboard -->
+
+    <!-- ══ ТЕЛЕМЕТРИЯ ══ -->
+    <div class="page" id="page-telemetry">
+      <div class="sh">
+        <div class="st">Мониторинг датчиков</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="live-ind"><div class="ldot"></div>LIVE-ОБНОВЛЕНИЕ</div>
+          <select id="tel-interval" onchange="changeSimInterval()" class="fb-select" style="min-width:140px">
+            <option value="1000">Каждую секунду</option>
+            <option value="2000" selected>Каждые 2 сек</option>
+            <option value="5000">Каждые 5 сек</option>
+            <option value="10000">Каждые 10 сек</option>
+          </select>
+        </div>
+      </div>
+      <div id="live-cards-grid" class="g4" style="margin-bottom:18px"></div>
+      <div class="lcg" id="live-charts-wrap"></div>
+      <div class="panel">
+        <div class="ph"><div class="pt"><div class="ptd"></div>Исторический анализ</div></div>
+        <div class="pb">
+          <div class="fr" style="gap:10px;align-items:flex-end;margin-bottom:16px">
+            <div><label>Оборудование</label><select id="tel-eq-sel" onchange="onTelEqChange()" class="fb-select"><option value="">— Выберите —</option></select></div>
+            <div><label>Метрика</label><select id="tel-met-sel" onchange="loadHistChart()" class="fb-select"><option value="">— Выберите —</option></select></div>
+            <div><label>Период</label><select id="tel-hrs" onchange="loadHistChart()" class="fb-select"><option value="6">6 часов</option><option value="24" selected>24 часа</option><option value="72">3 дня</option><option value="168">7 дней</option></select></div>
+            <button class="btn btn-g btn-sm" onclick="loadHistChart()">↻</button>
+          </div>
+          <div style="display:flex;gap:16px;font-family:var(--font-mono);font-size:10px;color:var(--text-2);margin-bottom:12px">
+            МИН: <span id="h-min" style="color:var(--green)">–</span>&nbsp;&nbsp;
+            МАКС: <span id="h-max" style="color:var(--red)">–</span>&nbsp;&nbsp;
+            СРЕДНЕЕ: <span id="h-avg" style="color:var(--amber)">–</span>&nbsp;&nbsp;
+            ЗАПИСЕЙ: <span id="h-cnt" style="color:var(--text-2)">–</span>
+          </div>
+          <div style="height:230px"><canvas id="ch-hist"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ОБОРУДОВАНИЕ ══ -->
+    <div class="page" id="page-equipment">
+      <div class="sh"><div class="st">Реестр оборудования</div><div id="eq-add-btn"></div></div>
+      <div class="panel" style="margin:0">
+        <div class="fb">
+          <div class="sw" style="flex:2;max-width:260px">
+            <svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="eq-search" placeholder="Поиск по названию, серийному номеру..." oninput="debouncedLoadEquipment()"/>
+          </div>
+          <select id="eq-st" onchange="loadEquipment()"><option value="">Все статусы</option><option value="active">Активное</option><option value="maintenance">На обслуживании</option><option value="requires_maintenance">Требует ТО</option><option value="in_repair">В ремонте</option><option value="decommissioned">Списано</option><option value="storage">На складе</option></select>
+          <select id="eq-tp" onchange="loadEquipment()"><option value="">Все типы</option></select>
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th>Наименование</th><th>Серийный №</th><th>Тип</th><th>Расположение</th><th>Статус</th><th>Моточасы</th><th>Стоимость</th><th>Действия</th></tr></thead>
+          <tbody id="eq-tbody"><tr><td colspan="8"><div class="empty"><div class="spin"></div></div></td></tr></tbody>
+        </table></div>
+        <div class="pag" id="eq-pag"></div>
+      </div>
+    </div>
+
+    <!-- ══ ЛОКАЦИИ ══ -->
+    <div class="page" id="page-locations">
+      <div class="sh"><div class="st">Локации и склады</div><button class="btn btn-p btn-sm" onclick="openLocModal()">+ Добавить локацию</button></div>
+      <div class="panel" style="margin:0"><div class="tw"><table>
+        <thead><tr><th>Название</th><th>Адрес</th><th>Вышестоящая локация</th><th>Кол-во единиц</th></tr></thead>
+        <tbody id="loc-tbody"><tr><td colspan="4"><div class="empty"><div class="spin"></div></div></td></tr></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- ══ ОБСЛУЖИВАНИЕ ══ -->
+    <div class="page" id="page-maintenance">
+      <div class="sh"><div class="st">Обслуживание и ремонты</div><div id="task-add-btn"></div></div>
+      <div class="g3" id="task-kpis">
+        <div class="kc" style="--ac:var(--amber)"><div class="kc-lbl">Открытые задачи</div><div class="kc-val" style="color:var(--amber)" id="tk-open">–</div></div>
+        <div class="kc" style="--ac:var(--cyan)"><div class="kc-lbl">В работе</div><div class="kc-val" style="color:var(--cyan)" id="tk-prog">–</div></div>
+        <div class="kc" style="--ac:var(--green)"><div class="kc-lbl">Выполнено (месяц)</div><div class="kc-val" style="color:var(--green)" id="tk-done">–</div></div>
+      </div>
+      <div class="panel" style="margin:0">
+        <div class="fb">
+          <select id="task-st" onchange="loadTasks()"><option value="">Все статусы</option><option value="open">Открытые</option><option value="in_progress">В работе</option><option value="completed">Выполненные</option><option value="cancelled">Отменённые</option></select>
+          <select id="task-tp" onchange="loadTasks()"><option value="">Все типы</option><option value="preventive">Плановое</option><option value="corrective">Корректирующее</option><option value="inspection">Инспекция</option></select>
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th>Оборудование</th><th>Тип</th><th>Статус</th><th>Исполнитель</th><th>Запланировано</th><th>Завершено</th><th>Затраты</th><th>Действия</th></tr></thead>
+          <tbody id="task-tbody"><tr><td colspan="8"><div class="empty"><div class="spin"></div></div></td></tr></tbody>
+        </table></div>
+        <div class="pag" id="task-pag"></div>
+      </div>
+    </div>
+
+    <!-- ══ АУДИТ ══ -->
+    <div class="page" id="page-audit">
+      <div class="sh"><div class="st">Журнал аудита операций</div></div>
+      <div class="panel" style="margin:0">
+        <div class="fb">
+          <select id="aud-op" onchange="loadAudit()"><option value="">Все операции</option><option value="I">Добавление (I)</option><option value="U">Обновление (U)</option><option value="D">Удаление (D)</option></select>
+          <select id="aud-tbl" onchange="loadAudit()"><option value="">Все таблицы</option><option value="equipment">equipment</option><option value="maintenance_tasks">maintenance_tasks</option></select>
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th>#</th><th>Схема.Таблица</th><th>Операция</th><th>ID записи</th><th>Пользователь</th><th>Время</th><th>Детали</th></tr></thead>
+          <tbody id="aud-tbody"><tr><td colspan="7"><div class="empty"><div class="spin"></div></div></td></tr></tbody>
+        </table></div>
+        <div class="pag" id="aud-pag"></div>
+      </div>
+    </div>
+
+    <!-- ══ СОТРУДНИКИ ══ -->
+    <div class="page" id="page-employees">
+      <div class="sh"><div class="st">Реестр сотрудников</div><div id="emp-add-btn"></div></div>
+      <div class="panel" style="margin:0"><div class="tw"><table>
+        <thead><tr><th>ФИО</th><th>Роль</th><th>Электронная почта</th><th>Отдел</th><th>Статус</th><th>Дата создания</th></tr></thead>
+        <tbody id="emp-tbody"><tr><td colspan="6"><div class="empty"><div class="spin"></div></div></td></tr></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- ══ МАТРИЦА ПРАВ ══ -->
+    <div class="page" id="page-roles">
+      <div class="sh"><div class="st">Матрица прав доступа</div></div>
+      <div class="panel" style="margin-bottom:18px"><div class="tw"><table>
+        <thead><tr><th>Ресурс</th><th style="text-align:center">Администратор</th><th style="text-align:center">Инженер</th><th style="text-align:center">Кладовщик</th><th style="text-align:center">Аудитор</th><th style="text-align:center">Наблюдатель</th></tr></thead>
+        <tbody id="role-tbody"></tbody>
+      </table></div></div>
+      <div class="g3" style="margin-top:0">
+        <div class="kc"><div class="kc-lbl">Администратор</div><div style="font-size:11px;color:var(--text-2);margin-top:8px;line-height:1.7">Полный доступ ко всем функциям системы. Управляет персоналом, ролями и конфигурацией.</div></div>
+        <div class="kc"><div class="kc-lbl">Инженер</div><div style="font-size:11px;color:var(--text-2);margin-top:8px;line-height:1.7">Обновляет статусы оборудования, записывает телеметрию, управляет задачами ТО.</div></div>
+        <div class="kc"><div class="kc-lbl">Кладовщик</div><div style="font-size:11px;color:var(--text-2);margin-top:8px;line-height:1.7">Полный контроль инвентаря — приёмка, перемещение, списание оборудования.</div></div>
+        <div class="kc"><div class="kc-lbl">Аудитор</div><div style="font-size:11px;color:var(--text-2);margin-top:8px;line-height:1.7">Чтение всех данных включая финансы и журнал аудита. Только просмотр.</div></div>
+        <div class="kc"><div class="kc-lbl">Наблюдатель</div><div style="font-size:11px;color:var(--text-2);margin-top:8px;line-height:1.7">Минимальный доступ — список оборудования и телеметрия.</div></div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<div id="toasts"></div>
+
+<!-- MODALS -->
+<div class="ov" id="ov-eq"><div class="modal">
+  <div class="mh"><div class="mt" id="eq-mt">Добавить оборудование</div><button class="btn btn-g btn-ico" onclick="closeOv('ov-eq')">✕</button></div>
+  <div class="mb">
+    <input type="hidden" id="eq-id"/>
+    <div class="fr"><div class="fg"><label>Наименование *</label><input id="eq-name" placeholder="Станок ЧПУ А100"/></div><div class="fg"><label>Серийный номер *</label><input id="eq-sn" placeholder="SN-001"/></div></div>
+    <div class="fr"><div class="fg"><label>Инвентарный номер</label><input id="eq-inv" placeholder="ИНВ-2024-0001"/></div><div class="fg"><label>Тип оборудования *</label><select id="eq-tp-sel"></select></div></div>
+    <div class="fr"><div class="fg"><label>Расположение</label><select id="eq-loc-sel"><option value="">— Не задано —</option></select></div><div class="fg"><label>Ответственный</label><select id="eq-resp-sel"><option value="">— Не задано —</option></select></div></div>
+    <div class="fr"><div class="fg"><label>Статус</label><select id="eq-st-sel"><option value="active">Активное</option><option value="maintenance">На обслуживании</option><option value="requires_maintenance">Требует ТО</option><option value="in_repair">В ремонте</option><option value="storage">На складе</option><option value="decommissioned">Списано</option></select></div><div class="fg"><label>Дата закупки *</label><input type="date" id="eq-date"/></div></div>
+    <div class="fr"><div class="fg"><label>Закупочная стоимость (₽) *</label><input type="number" id="eq-cost" placeholder="150000" min="0"/></div><div class="fg"><label>Остаточная стоимость (₽)</label><input type="number" id="eq-res" placeholder="90000" min="0"/></div></div>
+    <div class="fg"><label>Моточасы</label><input type="number" id="eq-hrs" placeholder="0" min="0"/></div>
+  </div>
+  <div class="mf"><button class="btn btn-g" onclick="closeOv('ov-eq')">Отмена</button><button class="btn btn-p" onclick="saveEq()">Сохранить</button></div>
+</div></div>
+
+<div class="ov" id="ov-move"><div class="modal" style="width:380px">
+  <div class="mh"><div class="mt">Переместить оборудование</div><button class="btn btn-g btn-ico" onclick="closeOv('ov-move')">✕</button></div>
+  <div class="mb">
+    <input type="hidden" id="mv-id"/>
+    <div class="fg"><label>Новое расположение *</label><select id="mv-loc"><option value="">— Выберите —</option></select></div>
+    <div class="fg"><label>Причина перемещения</label><input id="mv-reason" placeholder="Перевод в производственный цех"/></div>
+  </div>
+  <div class="mf"><button class="btn btn-g" onclick="closeOv('ov-move')">Отмена</button><button class="btn btn-p" onclick="confirmMove()">Подтвердить</button></div>
+</div></div>
+
+<div class="ov" id="ov-decomm"><div class="modal" style="width:380px">
+  <div class="mh"><div class="mt" style="color:var(--red)">Списание оборудования</div><button class="btn btn-g btn-ico" onclick="closeOv('ov-decomm')">✕</button></div>
+  <div class="mb">
+    <input type="hidden" id="dc-id"/>
+    <div style="background:rgba(255,61,87,.05);border:1px solid rgba(255,61,87,.18);border-radius:var(--r);padding:11px 13px;margin-bottom:14px;font-size:11px;color:#ff8a9b;line-height:1.6">⚠ Это действие необратимо. Оборудование будет помечено как списанное, остаточная стоимость обнулится.</div>
+    <div class="fg"><label>Причина списания *</label><textarea id="dc-reason" rows="3" placeholder="Истёк срок службы..."></textarea></div>
+  </div>
+  <div class="mf"><button class="btn btn-g" onclick="closeOv('ov-decomm')">Отмена</button><button class="btn btn-d" onclick="confirmDecomm()">Списать</button></div>
+</div></div>
+
+<div class="ov" id="ov-task"><div class="modal">
+  <div class="mh"><div class="mt" id="task-mt">Создать задачу</div><button class="btn btn-g btn-ico" onclick="closeOv('ov-task')">✕</button></div>
+  <div class="mb">
+    <input type="hidden" id="task-id"/>
+    <div class="fr"><div class="fg"><label>Оборудование *</label><select id="task-eq"></select></div><div class="fg"><label>Тип задачи *</label><select id="task-tp-sel"><option value="preventive">Плановое ТО</option><option value="corrective">Корректирующее</option><option value="inspection">Инспекция</option></select></div></div>
+    <div class="fr"><div class="fg"><label>Исполнитель</label><select id="task-asgn"><option value="">— Не назначен —</option></select></div><div class="fg"><label>Статус</label><select id="task-st-sel"><option value="open">Открытая</option><option value="in_progress">В работе</option><option value="completed">Выполнена</option><option value="cancelled">Отменена</option></select></div></div>
+    <div class="fr"><div class="fg"><label>Запланировано *</label><input type="datetime-local" id="task-sched"/></div><div class="fg"><label>Затраты (₽)</label><input type="number" id="task-cost" placeholder="0" min="0"/></div></div>
+    <div class="fg"><label>Описание</label><textarea id="task-desc" rows="3" placeholder="Опишите работы..."></textarea></div>
+  </div>
+  <div class="mf"><button class="btn btn-g" onclick="closeOv('ov-task')">Отмена</button><button class="btn btn-p" onclick="saveTask()">Сохранить</button></div>
+</div></div>
+
+<div class="ov" id="ov-loc"><div class="modal" style="width:380px">
+  <div class="mh"><div class="mt">Добавить локацию</div><button class="btn btn-g btn-ico" onclick="closeOv('ov-loc')">✕</button></div>
+  <div class="mb">
+    <div class="fg"><label>Название *</label><input id="loc-name" placeholder="Склад А"/></div>
+    <div class="fg"><label>Адрес</label><input id="loc-addr" placeholder="Промышленная зона 1"/></div>
+    <div class="fg"><label>Вышестоящая локация</label><select id="loc-par"><option value="">— Верхний уровень —</option></select></div>
+  </div>
+  <div class="mf"><button class="btn btn-g" onclick="closeOv('ov-loc')">Отмена</button><button class="btn btn-p" onclick="saveLoc()">Сохранить</button></div>
+</div></div>
+
+<div class="ov" id="ov-aud"><div class="modal" style="width:580px">
+  <div class="mh"><div class="mt">Детали записи аудита</div><button class="btn btn-g btn-ico" onclick="closeOv('ov-aud')">✕</button></div>
+  <div class="mb" id="aud-detail"></div>
+  <div class="mf"><button class="btn btn-g" onclick="closeOv('ov-aud')">Закрыть</button></div>
+</div></div>
+
+<script>
+// Демо-режим: подменяет FastAPI-бэкенд данными в памяти, чтобы SPA открывалась как обычный файл.
+// Данные взяты из app/seed.py и сбрасываются при перезагрузке страницы.
+(() => {
+  'use strict';
+
+  const now   = Date.now();
+  const iso   = ms => new Date(ms).toISOString();
+  const days  = n => n * 86400000;
+  const hours = n => n * 3600000;
+  let seq = 1000;
+  const uid = p => `${p}-${(++seq).toString(16)}`;
+
+  // ── Справочники ─────────────────────────────────────────────
+  const DEPTS = ['IT Department', 'Production', 'Warehouse', 'Finance', 'Quality Control']
+    .map((name, i) => ({ id: `d${i + 1}`, name }));
+
+  const USERS = [
+    ['u1', 'Aleksei Petrov', 'admin@company.com',     'admin123', 'admin',       'd1', true],
+    ['u2', 'Maria Sokolova', 'engineer@company.com',  'eng123',   'engineer',    'd2', true],
+    ['u3', 'Ivan Kozlov',    'store@company.com',     'store123', 'storekeeper', 'd3', true],
+    ['u4', 'Olga Novikova',  'auditor@company.com',   'audit123', 'auditor',     'd4', true],
+    ['u5', 'Dmitry Volkov',  'viewer@company.com',    'view123',  'viewer',      'd5', true],
+    ['u6', 'Anna Lebedeva',  'engineer2@company.com', 'eng123',   'engineer',    'd2', false],
+  ].map(([id, full_name, email, password, role, department_id, is_active]) =>
+    ({ id, full_name, email, password, role, department_id, is_active, created_at: '2026-04-28T09:00:00Z' }));
+
+  const PERMISSIONS = {
+    admin:       { equipment: ['read', 'write', 'update', 'move', 'decommission'], telemetry: ['read'], maintenance: ['read', 'write'], audit: ['read'], employees: ['read', 'write'], costs: ['read'], locations: ['read'] },
+    engineer:    { equipment: ['read', 'update'], telemetry: ['read', 'write'], maintenance: ['read', 'write'], audit: [], employees: [], costs: [], locations: ['read'] },
+    storekeeper: { equipment: ['read', 'write', 'move'], telemetry: [], maintenance: ['read'], audit: [], employees: [], costs: [], locations: ['read', 'write'] },
+    auditor:     { equipment: ['read'], telemetry: ['read'], maintenance: ['read'], audit: ['read'], employees: ['read'], costs: ['read'], locations: ['read'] },
+    viewer:      { equipment: ['read'], telemetry: ['read'], maintenance: ['read'], audit: [], employees: [], costs: [], locations: ['read'] },
+  };
+
+  const TYPES = [
+    ['t1', 'CNC Machine', 500, 10], ['t2', 'Industrial Generator', 1000, 15], ['t3', 'Forklift', 250, 7],
+    ['t4', 'Air Compressor', 2000, 8], ['t5', 'Server', 8760, 5], ['t6', 'Conveyor Belt', 750, 12],
+  ].map(([id, name, maintenance_interval_hours, depreciation_years]) => ({ id, name, maintenance_interval_hours, depreciation_years }));
+
+  const LOCS = [
+    { id: 'l1', name: 'Main Warehouse',  address: 'Industrial Zone 1, Building A', parent_location_id: null },
+    { id: 'l2', name: 'Production Hall', address: 'Industrial Zone 1, Building B', parent_location_id: null },
+    { id: 'l3', name: 'Server Room',     address: 'HQ, Floor 3',                   parent_location_id: null },
+    { id: 'l4', name: 'Garage',          address: 'Industrial Zone 2',             parent_location_id: null },
+    { id: 'l5', name: 'Storage Area B',  address: 'Industrial Zone 1, Building A', parent_location_id: 'l1' },
+  ];
+
+  const typeName = id => TYPES.find(t => t.id === id)?.name || null;
+  const locName  = id => LOCS.find(l => l.id === id)?.name || null;
+
+  // ── Оборудование ────────────────────────────────────────────
+  const EQ = [
+    ['CNC-A100', 'SN-CNC-001', 't1', 'l2', 'active',               150000, 3420, 1],
+    ['CNC-A101', 'SN-CNC-002', 't1', 'l2', 'in_repair',            150000, 4815, 2],
+    ['GEN-5000', 'SN-GEN-001', 't2', 'l1', 'active',               320000, 1288, 3],
+    ['FORK-01',  'SN-FRK-001', 't3', 'l4', 'active',                85000, 2104, 4],
+    ['FORK-02',  'SN-FRK-002', 't3', 'l4', 'requires_maintenance',  85000, 2650, 5],
+    ['COMP-200', 'SN-CMP-001', 't4', 'l2', 'active',                64000, 1930, 6],
+    ['COMP-201', 'SN-CMP-002', 't4', 'l2', 'maintenance',           64000, 2275, 7],
+    ['SRV-R01',  'SN-SRV-001', 't5', 'l3', 'active',               410000, 8120, 8],
+    ['SRV-R02',  'SN-SRV-002', 't5', 'l5', 'storage',              410000,    0, 9],
+    ['CONV-L1',  'SN-CNV-001', 't6', 'l2', 'active',               210000, 3890, 10],
+    ['CONV-L2',  'SN-CNV-002', 't6', 'l2', 'active',               210000, 3512, 11],
+    ['GEN-3000', 'SN-GEN-002', 't2', 'l1', 'decommissioned',       280000, 9640, 12],
+  ].map(([name, serial_number, equipment_type_id, location_id, status, cost, operation_hours, i]) => ({
+    id: `e${i}`, name, serial_number, inventory_number: `INV-2024-${String(i).padStart(4, '0')}`,
+    equipment_type_id, equipment_type_name: typeName(equipment_type_id),
+    location_id, location_name: locName(location_id), responsible_employee_id: 'u2',
+    status, purchase_cost: cost, residual_value: status === 'decommissioned' ? 0 : Math.round(cost * 0.6),
+    purchase_date: '2022-01-01', operation_hours, characteristics: { demo: true },
+    created_at: '2026-04-28T09:00:00Z', updated_at: iso(now - hours(i * 7)),
+  }));
+
+  // ── Задачи ТО ───────────────────────────────────────────────
+  const TASKS = [
+    ['e5',  'preventive', 'open',        'u2', +2,  null, 0,     'Плановое ТО: замена масла и фильтров'],
+    ['e2',  'corrective', 'in_progress', 'u2', -1,  null, 0,     'Замена подшипника шпинделя'],
+    ['e7',  'preventive', 'in_progress', 'u6', -2,  null, 0,     'Проверка клапанов и ресиверов'],
+    ['e1',  'inspection', 'open',        null, +4,  null, 0,     'Осмотр направляющих и смазки'],
+    ['e3',  'preventive', 'open',        'u2', +6,  null, 0,     'ТО генератора по моточасам'],
+    ['e10', 'inspection', 'open',        null, +8,  null, 0,     'Проверка натяжения ленты'],
+    ['e8',  'preventive', 'in_progress', 'u2', -3,  null, 0,     'Чистка и замена термопасты'],
+    ['e4',  'corrective', 'open',        'u6', +1,  null, 0,     'Диагностика АКБ'],
+    ['e11', 'preventive', 'in_progress', 'u6', -1,  null, 0,     'Замена приводного ремня'],
+    ['e6',  'preventive', 'completed',   'u2', -9,  -2,  18500, 'Замена воздушного фильтра'],
+    ['e1',  'corrective', 'completed',   'u2', -12, -1,  42000, 'Ремонт системы охлаждения'],
+    ['e4',  'preventive', 'completed',   'u6', -8,  -1,  12400, 'Плановое ТО погрузчика'],
+    ['e3',  'inspection', 'completed',   'u2', -6,  -2,  6800,  'Инспекция топливной системы'],
+    ['e10', 'preventive', 'completed',   'u6', -5,  -1,  15200, 'Смазка роликов'],
+    ['e8',  'inspection', 'completed',   'u2', -4,  -1,  4300,  'Проверка ИБП'],
+    ['e11', 'corrective', 'completed',   'u6', -3,  -0.5, 27900, 'Замена датчика скорости'],
+    ['e9',  'preventive', 'cancelled',   null, -20, null, 0,    'Отменено: оборудование на складе'],
+  ].map(([equipment_id, task_type, status, assigned_to, sched, done, cost, description], i) => ({
+    id: `k${i + 1}`, equipment_id, task_type, status, assigned_to, description, cost,
+    scheduled_at: iso(now + days(sched)), completed_at: done == null ? null : iso(now + days(done)),
+    created_at: iso(now + days(sched - 3)),
+  }));
+
+  const taskOut = t => ({
+    ...t,
+    equipment_name: EQ.find(e => e.id === t.equipment_id)?.name || null,
+    assigned_name:  USERS.find(u => u.id === t.assigned_to)?.full_name || null,
+  });
+
+  // ── Журнал аудита ───────────────────────────────────────────
+  const AUDIT = [];
+  let auditSeq = 0;
+  const pick = (o, keys) => Object.fromEntries(keys.map(k => [k, o[k]]));
+  const AUD_KEYS = ['name', 'serial_number', 'status', 'location_id', 'operation_hours', 'purchase_cost', 'residual_value'];
+  function audit(table, op, recordId, oldData, newData, userId, at = Date.now()) {
+    AUDIT.unshift({
+      id: ++auditSeq, schema_name: table === 'equipment' ? 'inventory' : 'monitoring', table_name: table,
+      record_id: recordId, operation: op, old_data: oldData, new_data: newData, user_id: userId, performed_at: iso(at),
+    });
+  }
+  EQ.forEach((e, i) => audit('equipment', 'I', e.id, null, pick(e, AUD_KEYS), 'u3', now - days(30) + hours(i)));
+  audit('equipment', 'U', 'e2', { ...pick(EQ[1], AUD_KEYS), status: 'active' }, pick(EQ[1], AUD_KEYS), 'u2', now - days(2));
+  audit('equipment', 'U', 'e5', { ...pick(EQ[4], AUD_KEYS), status: 'active' }, pick(EQ[4], AUD_KEYS), 'u2', now - days(1));
+  audit('equipment', 'U', 'e12', { ...pick(EQ[11], AUD_KEYS), status: 'active', residual_value: 168000 }, pick(EQ[11], AUD_KEYS), 'u1', now - days(5));
+  TASKS.slice(9, 13).forEach(t => audit('maintenance_tasks', 'U', t.id, { status: 'in_progress', cost: 0 }, { status: 'completed', cost: t.cost }, t.assigned_to, Date.parse(t.completed_at)));
+  AUDIT.sort((a, b) => Date.parse(b.performed_at) - Date.parse(a.performed_at));
+  AUDIT.forEach((a, i) => { a.id = AUDIT.length - i; });
+  auditSeq = AUDIT.length;
+
+  // ── Телеметрия: стабильный ряд для пары оборудование + метрика ──
+  function rng(seed) {
+    let s = 0;
+    for (const c of seed) s = (s * 31 + c.charCodeAt(0)) >>> 0;
+    return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  }
+  function metricRange(eq, name) {
+    const cfg = typeof window.getMetricsForEquipment === 'function'
+      ? window.getMetricsForEquipment(eq).find(m => m.name === name) : null;
+    return cfg ? { min: cfg.min, max: cfg.max } : { min: 20, max: 80 };
+  }
+  const METRICS = {
+    t1: ['spindle_rpm', 'temperature_c', 'vibration_mm_s'], t2: ['output_kw', 'fuel_level_pct', 'coolant_temp_c'],
+    t3: ['battery_pct', 'load_kg', 'speed_kmh'], t4: ['pressure_bar', 'temperature_c', 'flow_m3_min'],
+    t5: ['cpu_pct', 'ram_pct', 'temperature_c'], t6: ['belt_speed_m_min', 'motor_load_pct', 'motor_temp_c'],
+  };
+  function series(eqId, metric, hrs) {
+    const eq = EQ.find(e => e.id === eqId);
+    if (!eq) return [];
+    const { min, max } = metricRange(eq, metric);
+    const span = max - min, center = min + span * 0.5;
+    const step = hrs <= 24 ? 15 : hrs <= 72 ? 30 : 60;  // минуты между точками
+    const n = Math.round(hrs * 60 / step);
+    const r = rng(`${eqId}:${metric}`);
+    const ph1 = r() * 6, ph2 = r() * 6;
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const t = now - (n - i) * step * 60000;
+      const k = t / 3600000;  // часы: форма ряда не зависит от выбранного периода
+      let v = center + span * (0.22 * Math.sin(k / 3.8 + ph1) + 0.1 * Math.sin(k / 1.1 + ph2) + (r() - 0.5) * 0.04);
+      out.push({ timestamp: iso(t), value: +Math.max(min, Math.min(max, v)).toFixed(4) });
+    }
+    return out;
+  }
+
+  // ── HTTP-слой ───────────────────────────────────────────────
+  const json = (status, body) => new Response(status === 204 ? null : JSON.stringify(body), {
+    status, headers: { 'Content-Type': 'application/json' },
+  });
+  const fail = (status, detail) => json(status, { detail });
+  const page = (list, q, per = 20) => {
+    const p = Math.max(1, +(q.get('page') || 1));
+    const pp = Math.max(1, +(q.get('per_page') || per));
+    return { items: list.slice((p - 1) * pp, p * pp), total: list.length, page: p, per_page: pp };
+  };
+
+  function userFrom(headers) {
+    const h = headers instanceof Headers ? headers.get('Authorization') : (headers?.Authorization || headers?.authorization);
+    const id = (h || '').replace(/^Bearer demo\./, '');
+    return USERS.find(u => u.id === id && u.is_active) || null;
+  }
+  const can = (user, res, act) => (PERMISSIONS[user.role]?.[res] || []).includes(act);
+  const publicUser = u => ({ id: u.id, full_name: u.full_name, email: u.email, role: u.role, department_id: u.department_id, is_active: u.is_active, created_at: u.created_at });
+
+  function handle(method, url, body, headers) {
+    const p = url.pathname, q = url.searchParams;
+
+    if (p === '/api/auth/login' && method === 'POST') {
+      const u = USERS.find(x => x.email === body?.email && x.password === body?.password);
+      if (!u || !u.is_active) return fail(401, 'Неверный email или пароль');
+      return json(200, { access_token: `demo.${u.id}`, token_type: 'bearer', ...publicUser(u) });
+    }
+
+    const me = userFrom(headers);
+    if (!me) return fail(401, 'Требуется авторизация');
+
+    if (p === '/api/auth/me') return json(200, publicUser(me));
+    if (p === '/api/auth/permissions') return json(200, PERMISSIONS);
+
+    // Справочники
+    if (p === '/api/equipment/types') return json(200, TYPES);
+    if (p === '/api/equipment/locations' && method === 'GET') return json(200, LOCS);
+    if (p === '/api/equipment/locations' && method === 'POST') {
+      if (!can(me, 'locations', 'write') && me.role !== 'admin') return fail(403, 'Недостаточно прав');
+      const loc = { id: uid('l'), name: body.name, address: body.address || null, parent_location_id: body.parent_location_id || null };
+      LOCS.push(loc);
+      return json(200, loc);
+    }
+
+    // Оборудование
+    if (p === '/api/equipment' && method === 'GET') {
+      const s = (q.get('search') || '').toLowerCase(), st = q.get('status'), tp = q.get('type_id');
+      const list = EQ.filter(e =>
+        (!s || [e.name, e.serial_number, e.inventory_number].some(v => (v || '').toLowerCase().includes(s))) &&
+        (!st || e.status === st) && (!tp || e.equipment_type_id === tp));
+      return json(200, page(list, q, 20));
+    }
+    if (p === '/api/equipment' && method === 'POST') {
+      if (!can(me, 'equipment', 'write')) return fail(403, 'Недостаточно прав');
+      if (EQ.some(e => e.serial_number === body.serial_number)) return fail(400, 'Оборудование с таким серийным номером уже есть');
+      const e = {
+        id: uid('e'), name: body.name, serial_number: body.serial_number, inventory_number: body.inventory_number || null,
+        equipment_type_id: body.equipment_type_id, equipment_type_name: typeName(body.equipment_type_id),
+        location_id: body.location_id || null, location_name: locName(body.location_id),
+        responsible_employee_id: body.responsible_employee_id || null, status: body.status || 'active',
+        purchase_cost: +body.purchase_cost, residual_value: body.residual_value ?? null, purchase_date: body.purchase_date,
+        operation_hours: body.operation_hours || 0, characteristics: {}, created_at: iso(Date.now()), updated_at: iso(Date.now()),
+      };
+      EQ.unshift(e);
+      audit('equipment', 'I', e.id, null, pick(e, AUD_KEYS), me.id);
+      return json(201, e);
+    }
+    let m = p.match(/^\/api\/equipment\/([^/]+)(\/move|\/decommission)?$/);
+    if (m) {
+      const e = EQ.find(x => x.id === m[1]);
+      if (!e) return fail(404, 'Оборудование не найдено');
+      if (method === 'GET') return json(200, e);
+      const before = pick(e, AUD_KEYS);
+      if (m[2] === '/move') {
+        if (!can(me, 'equipment', 'move')) return fail(403, 'Недостаточно прав');
+        e.location_id = body.location_id; e.location_name = locName(body.location_id);
+      } else if (m[2] === '/decommission') {
+        if (!can(me, 'equipment', 'decommission')) return fail(403, 'Недостаточно прав');
+        e.status = 'decommissioned'; e.residual_value = 0;
+      } else if (method === 'PATCH') {
+        if (!can(me, 'equipment', 'update') && !can(me, 'equipment', 'write')) return fail(403, 'Недостаточно прав');
+        Object.assign(e, body);
+        e.location_name = locName(e.location_id);
+      }
+      e.updated_at = iso(Date.now());
+      audit('equipment', 'U', e.id, before, pick(e, AUD_KEYS), me.id);
+      return json(200, e);
+    }
+
+    // Сводка
+    if (p === '/api/dashboard/stats') {
+      const by = (list, key) => list.reduce((a, x) => (a[x[key]] = (a[x[key]] || 0) + 1, a), {});
+      const byStatus = by(EQ, 'status');
+      const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
+      return json(200, {
+        total_equipment: EQ.length, active_equipment: byStatus.active || 0, in_repair: byStatus.in_repair || 0,
+        requires_maintenance: byStatus.requires_maintenance || 0, decommissioned: byStatus.decommissioned || 0,
+        open_tasks: TASKS.filter(t => t.status === 'open').length,
+        in_progress_tasks: TASKS.filter(t => t.status === 'in_progress').length,
+        completed_tasks_month: TASKS.filter(t => t.status === 'completed' && Date.parse(t.completed_at) >= monthStart).length,
+        total_purchase_value: EQ.reduce((a, e) => a + (+e.purchase_cost || 0), 0),
+        total_residual_value: EQ.reduce((a, e) => a + (+e.residual_value || 0), 0),
+        equipment_by_status: byStatus,
+        equipment_by_type: EQ.reduce((a, e) => (a[e.equipment_type_name] = (a[e.equipment_type_name] || 0) + 1, a), {}),
+        tasks_by_type: by(TASKS, 'task_type'),
+        recent_telemetry_metrics: [],
+      });
+    }
+
+    // Обслуживание
+    if (p === '/api/maintenance/stats') {
+      const by = key => TASKS.reduce((a, t) => (a[t[key]] = (a[t[key]] || 0) + 1, a), {});
+      return json(200, { by_status: by('status'), by_type: by('task_type'),
+        total_completed_cost: TASKS.filter(t => t.status === 'completed').reduce((a, t) => a + t.cost, 0) });
+    }
+    if (p === '/api/maintenance' && method === 'GET') {
+      const st = q.get('status'), tp = q.get('task_type');
+      const list = TASKS.filter(t => (!st || t.status === st) && (!tp || t.task_type === tp))
+        .sort((a, b) => Date.parse(b.scheduled_at) - Date.parse(a.scheduled_at)).map(taskOut);
+      return json(200, page(list, q, 20));
+    }
+    if (p === '/api/maintenance' && method === 'POST') {
+      if (!can(me, 'maintenance', 'write')) return fail(403, 'Недостаточно прав');
+      const t = { id: uid('k'), equipment_id: body.equipment_id, task_type: body.task_type, status: body.status || 'open',
+        assigned_to: body.assigned_to || null, description: body.description || null, cost: +body.cost || 0,
+        scheduled_at: body.scheduled_at, completed_at: body.status === 'completed' ? iso(Date.now()) : null, created_at: iso(Date.now()) };
+      TASKS.unshift(t);
+      audit('maintenance_tasks', 'I', t.id, null, { status: t.status, task_type: t.task_type, cost: t.cost }, me.id);
+      return json(201, taskOut(t));
+    }
+    m = p.match(/^\/api\/maintenance\/([^/]+)$/);
+    if (m) {
+      const t = TASKS.find(x => x.id === m[1]);
+      if (!t) return fail(404, 'Задача не найдена');
+      if (method === 'GET') return json(200, taskOut(t));
+      if (!can(me, 'maintenance', 'write')) return fail(403, 'Недостаточно прав');
+      const before = { status: t.status, cost: t.cost };
+      Object.assign(t, body);
+      if (t.status === 'completed' && !t.completed_at) t.completed_at = iso(Date.now());
+      audit('maintenance_tasks', 'U', t.id, before, { status: t.status, cost: t.cost }, me.id);
+      return json(200, taskOut(t));
+    }
+
+    // Телеметрия
+    if (p === '/api/telemetry/batch') return json(201, { inserted: Array.isArray(body) ? body.length : 0 });
+    if (p === '/api/telemetry/metrics') {
+      const e = EQ.find(x => x.id === q.get('equipment_id'));
+      return json(200, e ? METRICS[e.equipment_type_id] || [] : []);
+    }
+    if (p === '/api/telemetry/chart') {
+      return json(200, { equipment_id: q.get('equipment_id'), metric_name: q.get('metric_name'),
+        points: series(q.get('equipment_id'), q.get('metric_name'), +(q.get('hours') || 24)) });
+    }
+    if (p === '/api/telemetry/summary') {
+      const pts = series(q.get('equipment_id'), q.get('metric_name'), +(q.get('hours') || 24)).map(x => x.value);
+      if (!pts.length) return json(200, { min: null, max: null, avg: null, count: 0 });
+      return json(200, { min: Math.min(...pts), max: Math.max(...pts), avg: pts.reduce((a, v) => a + v, 0) / pts.length, count: pts.length });
+    }
+
+    // Аудит, сотрудники, отделы
+    if (p === '/api/audit') {
+      if (!can(me, 'audit', 'read')) return fail(403, 'Недостаточно прав');
+      const op = q.get('operation'), tb = q.get('table_name');
+      return json(200, page(AUDIT.filter(a => (!op || a.operation === op) && (!tb || a.table_name === tb)), q, 20));
+    }
+    if (p === '/api/employees') {
+      if (!can(me, 'employees', 'read')) return fail(403, 'Недостаточно прав');
+      return json(200, USERS.map(publicUser));
+    }
+    if (p === '/api/departments') return json(200, DEPTS);
+
+    return fail(404, `Нет такого метода в демо: ${method} ${p}`);
+  }
+
+  const realFetch = window.fetch.bind(window);
+  window.fetch = async (input, init = {}) => {
+    const url = new URL(typeof input === 'string' ? input : input.url, 'http://demo.local');
+    if (!url.pathname.startsWith('/api/')) return realFetch(input, init);
+    const method = (init.method || 'GET').toUpperCase();
+    let body = null;
+    try { body = init.body ? JSON.parse(init.body) : null; } catch {}
+    await new Promise(r => setTimeout(r, 120));
+    try {
+      return handle(method, url, body, init.headers);
+    } catch (e) {
+      return fail(500, e.message);
+    }
+  };
+})();
+
+</script>
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+const API = '';
+let token = localStorage.getItem('ems_token');
+let currentUser = null;
+const PAGES = { eq: 1, task: 1, aud: 1 };
+const CHARTS = {};
+let cachedTypes = [], cachedLocs = [], cachedEmps = [], cachedEq = [];
+const EQ_STORE = {}, TASK_STORE = {}, AUD_STORE = {};
+
+// ═══════════════════════════════════════════════════════════════
+// NOTIFICATIONS STATE
+// ═══════════════════════════════════════════════════════════════
+let notifications = [];        // {id, type:'hi'|'lo', eqId, equipName, metric, value, threshold, unit, ts, acked}
+let notifIdSeq = 0;
+const NOTIF_COOLDOWN = {};     // key: eqId+metric → timestamp of last notification
+const NOTIF_COOLDOWN_MS = 30000; // 30 seconds cooldown per sensor per alert type
+const MAX_NOTIFICATIONS = 200;
+
+function addNotification(s, type) {
+  const key = `${s.eqId}_${s.metric.name}_${type}`;
+  const now = Date.now();
+  if (NOTIF_COOLDOWN[key] && now - NOTIF_COOLDOWN[key] < NOTIF_COOLDOWN_MS) return;
+  NOTIF_COOLDOWN[key] = now;
+
+  const threshold = type === 'hi' ? s.metric.warn_hi : s.metric.warn_lo;
+  const notif = {
+    id:        ++notifIdSeq,
+    type,
+    eqId:      s.eqId,
+    equipName: s.equipName,
+    metricLabel: s.metric.label,
+    metricName:  s.metric.name,
+    value:     +s.value.toFixed(3),
+    threshold,
+    unit:      s.metric.unit,
+    ts:        now,
+    acked:     false,
+  };
+  notifications.unshift(notif);
+  if (notifications.length > MAX_NOTIFICATIONS) notifications.pop();
+
+  updateNotifBadges();
+
+  // Show toast for critical
+  if (type === 'hi') {
+    toastNotif(notif);
+  }
+}
+
+function updateNotifBadges() {
+  const unacked = notifications.filter(n => !n.acked);
+  const hiCnt   = unacked.filter(n => n.type === 'hi').length;
+  const loCnt   = unacked.filter(n => n.type === 'lo').length;
+  const total   = unacked.length;
+
+  // Sidebar badge
+  const nbNotif = document.getElementById('nb-notif');
+  if (nbNotif) {
+    if (total > 0) {
+      nbNotif.style.display = '';
+      nbNotif.textContent   = total > 99 ? '99+' : total;
+    } else {
+      nbNotif.style.display = 'none';
+    }
+  }
+
+  // Topbar bell
+  const tbBtn   = document.getElementById('tb-notif-btn');
+  const tbBadge = document.getElementById('tb-notif-badge');
+  if (tbBtn) {
+    tbBtn.classList.toggle('has-alerts', total > 0);
+  }
+  if (tbBadge) {
+    if (total > 0) {
+      tbBadge.style.display = '';
+      tbBadge.textContent   = total > 99 ? '99+' : total;
+    } else {
+      tbBadge.style.display = 'none';
+    }
+  }
+
+  // Dashboard tab badge
+  const dtBadge = document.getElementById('dash-tab-notif-badge');
+  if (dtBadge) {
+    dtBadge.textContent = total > 99 ? '99+' : total;
+    dtBadge.classList.toggle('zero', total === 0);
+  }
+
+  // Notif stats
+  const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  setEl('ns-hi-cnt',    hiCnt);
+  setEl('ns-lo-cnt',    loCnt);
+  setEl('ns-total-cnt', notifications.length);
+
+  // Summary text
+  const sumEl = document.getElementById('notif-summary');
+  if (sumEl) {
+    sumEl.textContent = unacked.length > 0
+      ? `${hiCnt} критических · ${loCnt} предупреждений · ${unacked.length} непрочитанных`
+      : 'Все уведомления подтверждены';
+  }
+}
+
+function toastNotif(n) {
+  const el = document.createElement('div');
+  el.className = 'toast t-err';
+  el.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+    <span><strong>${escHtml(n.equipName)}</strong> — ${escHtml(n.metricLabel)}: <strong>${n.value} ${n.unit}</strong> (порог: ${n.threshold})</span>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 5000);
+}
+
+function renderNotifications() {
+  const filterType = document.getElementById('notif-filter-type')?.value || '';
+  const filterAck  = document.getElementById('notif-filter-ack')?.value;
+
+  let list = [...notifications];
+  if (filterType) list = list.filter(n => n.type === filterType);
+  if (filterAck === 'unread') list = list.filter(n => !n.acked);
+  if (filterAck === 'ack')    list = list.filter(n => n.acked);
+
+  const wrap = document.getElementById('notif-list-wrap');
+  if (!wrap) return;
+
+  if (!list.length) {
+    wrap.innerHTML = `
+      <div class="notif-empty">
+        <span class="notif-empty-icon">${notifications.length === 0 ? '🔔' : '✅'}</span>
+        ${notifications.length === 0 ? 'Уведомлений нет<br><span style="font-size:8px;opacity:.6">Пороговые значения не превышены</span>'
+          : 'Нет уведомлений по выбранному фильтру'}
+      </div>`;
+    return;
+  }
+
+  wrap.innerHTML = `<div class="notif-list">${list.map(n => {
+    const isHi     = n.type === 'hi';
+    const cardCls  = isHi ? 'notif-hi' : 'notif-lo';
+    const iconCls  = isHi ? 'notif-icon-hi' : 'notif-icon-lo';
+    const valCls   = isHi ? 'notif-val-hi' : 'notif-val-lo';
+    const icon     = isHi ? '⚠' : '▼';
+    const overLabel = isHi ? 'превысило порог' : 'ниже минимума';
+    return `
+      <div class="notif-card ${cardCls}${n.acked ? ' notif-ack' : ''}" id="notif-card-${n.id}">
+        <div class="notif-icon ${iconCls}">${icon}</div>
+        <div class="notif-body">
+          <div class="notif-title">${escHtml(n.equipName)} — ${escHtml(n.metricLabel)}</div>
+          <div class="notif-meta">
+            <span>📍 ${overLabel}</span>
+            <span>порог: ${n.threshold} ${n.unit}</span>
+          </div>
+          <div>
+            <span class="notif-val ${valCls}">
+              ${isHi ? '↑' : '↓'} ${n.value} ${n.unit}
+              <span style="opacity:.6;font-size:8px">vs ${n.threshold}</span>
+            </span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+          <div class="notif-time">${fmtRelTime(n.ts)}</div>
+          ${!n.acked ? `<button class="notif-ack-btn" onclick="ackNotif(${n.id})">✓ OK</button>` : `<span style="font-family:var(--font-mono);font-size:7px;color:var(--text-3)">подтв.</span>`}
+        </div>
+      </div>`;
+  }).join('')}</div>`;
+}
+
+function ackNotif(id) {
+  const n = notifications.find(x => x.id === id);
+  if (n) { n.acked = true; }
+  updateNotifBadges();
+  renderNotifications();
+}
+
+function ackAllNotifs() {
+  notifications.forEach(n => n.acked = true);
+  updateNotifBadges();
+  renderNotifications();
+  toast('Все уведомления подтверждены', 'success');
+}
+
+function clearAllNotifs() {
+  notifications = [];
+  Object.keys(NOTIF_COOLDOWN).forEach(k => delete NOTIF_COOLDOWN[k]);
+  updateNotifBadges();
+  renderNotifications();
+  toast('Уведомления очищены', 'info');
+}
+
+function fmtRelTime(ts) {
+  const diff = Math.floor((Date.now() - ts) / 1000);
+  if (diff < 60)  return `${diff} сек назад`;
+  if (diff < 3600) return `${Math.floor(diff/60)} мин назад`;
+  if (diff < 86400) return `${Math.floor(diff/3600)} ч назад`;
+  return new Date(ts).toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DASHBOARD TABS
+// ═══════════════════════════════════════════════════════════════
+function switchDashTab(name) {
+  document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.dash-pane').forEach(p => p.classList.remove('active'));
+
+  const tab  = document.getElementById(`dtab-${name}`);
+  const pane = document.getElementById(`dpane-${name}`);
+  if (tab)  tab.classList.add('active');
+  if (pane) pane.classList.add('active');
+
+  if (name === 'notifications') {
+    renderNotifications();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// METRIC CONFIGS
+// ═══════════════════════════════════════════════════════════════
+const METRIC_CONFIGS = [
+  {
+    match: ['cnc','станок','фрезер','токарн'],
+    metrics: [
+      { name:'spindle_rpm',    label:'Обороты шпинделя',    unit:'об/мин', min:500,  max:8000, warn_hi:7500, warn_lo:600  },
+      { name:'temperature_c',  label:'Температура шпинделя',unit:'°C',     min:28,   max:95,   warn_hi:88,   warn_lo:null },
+      { name:'vibration_mm_s', label:'Вибрация',            unit:'мм/с',   min:0.05, max:6.5,  warn_hi:5.5,  warn_lo:null },
+    ],
+  },
+  {
+    match: ['generator','генератор','дизель'],
+    metrics: [
+      { name:'output_kw',      label:'Выходная мощность',   unit:'кВт',    min:50,   max:520,  warn_hi:500,  warn_lo:40   },
+      { name:'fuel_level_pct', label:'Уровень топлива',     unit:'%',      min:2,    max:100,  warn_hi:null, warn_lo:15   },
+      { name:'coolant_temp_c', label:'Тем-ра охлаждающей',  unit:'°C',     min:55,   max:125,  warn_hi:115,  warn_lo:50   },
+    ],
+  },
+  {
+    match: ['forklift','погрузчик','электрокар'],
+    metrics: [
+      { name:'battery_pct',    label:'Заряд АКБ',           unit:'%',      min:3,    max:100,  warn_hi:null, warn_lo:20   },
+      { name:'load_kg',        label:'Текущая нагрузка',    unit:'кг',     min:0,    max:2200, warn_hi:2000, warn_lo:null },
+      { name:'speed_kmh',      label:'Скорость',            unit:'км/ч',   min:0,    max:25,   warn_hi:22,   warn_lo:null },
+    ],
+  },
+  {
+    match: ['compressor','компрессор','пневмат'],
+    metrics: [
+      { name:'pressure_bar',   label:'Давление',            unit:'бар',    min:2,    max:13,   warn_hi:11.5, warn_lo:3    },
+      { name:'temperature_c',  label:'Температура',         unit:'°C',     min:22,   max:85,   warn_hi:78,   warn_lo:null },
+      { name:'flow_m3_min',    label:'Расход воздуха',      unit:'м³/мин', min:0.3,  max:5.5,  warn_hi:5.0,  warn_lo:0.2  },
+    ],
+  },
+  {
+    match: ['server','сервер','rack'],
+    metrics: [
+      { name:'cpu_pct',        label:'Загрузка ЦП',         unit:'%',      min:2,    max:100,  warn_hi:92,   warn_lo:null },
+      { name:'ram_pct',        label:'Загрузка RAM',        unit:'%',      min:10,   max:100,  warn_hi:90,   warn_lo:null },
+      { name:'temperature_c',  label:'Температура ЦП',      unit:'°C',     min:26,   max:82,   warn_hi:75,   warn_lo:null },
+    ],
+  },
+  {
+    match: ['conveyor','конвейер','лента'],
+    metrics: [
+      { name:'belt_speed_m_min',label:'Скорость ленты',     unit:'м/мин',  min:2,    max:65,   warn_hi:60,   warn_lo:2    },
+      { name:'motor_load_pct',  label:'Загрузка двигателя', unit:'%',      min:0,    max:100,  warn_hi:90,   warn_lo:null },
+      { name:'motor_temp_c',    label:'Тем-ра двигателя',   unit:'°C',     min:30,   max:100,  warn_hi:90,   warn_lo:null },
+    ],
+  },
+  {
+    match: ['__default__'],
+    metrics: [
+      { name:'temperature_c',  label:'Температура',         unit:'°C',     min:20,   max:80,   warn_hi:75,   warn_lo:null },
+      { name:'load_pct',       label:'Загрузка',            unit:'%',      min:0,    max:100,  warn_hi:95,   warn_lo:null },
+      { name:'vibration_mm_s', label:'Вибрация',            unit:'мм/с',   min:0,    max:5,    warn_hi:4.5,  warn_lo:null },
+    ],
+  },
+];
+
+function getMetricsForEquipment(eq) {
+  const haystack = ((eq.equipment_type_name||'') + ' ' + (eq.name||'')).toLowerCase();
+  for (const cfg of METRIC_CONFIGS) {
+    if (cfg.match[0] === '__default__') continue;
+    if (cfg.match.some(kw => haystack.includes(kw))) return cfg.metrics;
+  }
+  return METRIC_CONFIGS[METRIC_CONFIGS.length - 1].metrics;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SIMULATOR
+// ═══════════════════════════════════════════════════════════════
+let simSensors  = [];
+let simTimer    = null;
+let simRunning  = false;
+let simInterval = 2000;
+let simSentCount = 0;
+
+const LIVE_COLORS = ['#00c8ff','#00e676','#ffb800','#ff3d57','#b388ff','#ff7043','#40c4ff','#69f0ae','#e040fb','#ffcc02'];
+
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function initSimulator(equipList) {
+  simSensors = [];
+  let idx = 0;
+  const active = equipList.filter(e => !['decommissioned','storage'].includes(e.status));
+  for (const eq of active.slice(0, 8)) {
+    const metrics = getMetricsForEquipment(eq);
+    for (const m of metrics) {
+      const initVal = m.min + Math.random() * (m.max - m.min);
+      simSensors.push({
+        idx, eqId: eq.id, equipName: eq.name, metric: m,
+        value: initVal,
+        history: Array.from({ length: 60 }, (_, i) => ({
+          t: Date.now() - (60 - i) * simInterval,
+          v: m.min + Math.random() * (m.max - m.min),
+        })),
+        chartObj: null,
+      });
+      idx++;
+    }
+  }
+  startSimulator();
+  updateSimUI();
+}
+
+function simTick() {
+  const now = Date.now();
+  for (const s of simSensors) {
+    const m   = s.metric;
+    const rng = m.max - m.min;
+    const center = (m.max + m.min) / 2;
+    const drift  = (center - s.value) * 0.01 + (Math.random() - 0.5) * 0.04 * rng;
+    s.value = Math.max(m.min, Math.min(m.max, s.value + drift));
+    s.history.push({ t: now, v: s.value });
+    if (s.history.length > 120) s.history.shift();
+
+    // Threshold checks → notifications
+    if (m.warn_hi && s.value > m.warn_hi) addNotification(s, 'hi');
+    if (m.warn_lo && s.value < m.warn_lo) addNotification(s, 'lo');
+  }
+
+  const activePage = document.querySelector('.page.active')?.id;
+  if (activePage === 'page-telemetry') {
+    updateLiveCards();
+    updateLiveCharts();
+  }
+  if (activePage === 'page-dashboard') {
+    updateDashMini();
+  }
+
+  // If notifications pane is open, refresh relative times
+  const dpaneN = document.getElementById('dpane-notifications');
+  if (dpaneN?.classList.contains('active')) {
+    // Only refresh time labels, not full render
+    notifications.forEach(n => {
+      const tw = document.querySelector(`#notif-card-${n.id} .notif-time`);
+      if (tw) tw.textContent = fmtRelTime(n.ts);
+    });
+  }
+
+  sendTelemetryToApi();
+  simSentCount++;
+  updateSimUI();
+}
+
+async function sendTelemetryToApi() {
+  if (!token || simSensors.length === 0) return;
+  const batch = simSensors.map(s => ({
+    equipment_id: s.eqId,
+    metric_name:  s.metric.name,
+    value:        +s.value.toFixed(4),
+  }));
+  try {
+    const resp = await fetch(API + '/api/telemetry/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(batch),
+    });
+    if (!resp.ok) console.warn('Telemetry batch failed:', resp.status);
+  } catch {}
+}
+
+function startSimulator() {
+  if (simTimer) clearInterval(simTimer);
+  simTimer    = setInterval(simTick, simInterval);
+  simRunning  = true;
+  updateSimUI();
+}
+
+function stopSimulator() {
+  clearInterval(simTimer);
+  simTimer   = null;
+  simRunning = false;
+  updateSimUI();
+}
+
+function toggleSimulator() {
+  if (simRunning) stopSimulator(); else startSimulator();
+}
+
+function changeSimInterval() {
+  const sel = document.getElementById('tel-interval');
+  if (sel) simInterval = parseInt(sel.value, 10);
+  if (simRunning) startSimulator();
+  updateSimUI();
+}
+
+function updateSimUI() {
+  const dot   = document.getElementById('sdot');
+  const stTxt = document.getElementById('sim-status-txt');
+  const freqEl= document.getElementById('sim-freq-txt');
+  const btnTog= document.getElementById('sim-btn-toggle');
+  if (!dot) return;
+
+  const labels = { 1000:'1 сек', 2000:'2 сек', 5000:'5 сек', 10000:'10 сек' };
+  if (simRunning) {
+    dot.classList.remove('off');
+    if (stTxt) stTxt.textContent = `Активен · ${simSensors.length} датч.`;
+    if (btnTog) btnTog.textContent = 'Пауза';
+  } else {
+    dot.classList.add('off');
+    if (stTxt) stTxt.textContent = 'Симулятор на паузе';
+    if (btnTog) btnTog.textContent = 'Запуск';
+  }
+  if (freqEl) freqEl.textContent = 'Интервал: ' + (labels[simInterval] || '2 сек');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LIVE CARDS (Telemetry page)
+// ═══════════════════════════════════════════════════════════════
+function renderLiveCards() {
+  const grid = document.getElementById('live-cards-grid');
+  if (!grid) return;
+  if (simSensors.length === 0) {
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1">Симулятор не запущен.</div>';
+    return;
+  }
+  grid.innerHTML = simSensors.map(s => {
+    const m    = s.metric;
+    const pct  = Math.round(((s.value - m.min) / (m.max - m.min)) * 100);
+    const isHi = m.warn_hi && s.value > m.warn_hi;
+    const isLo = m.warn_lo && s.value < m.warn_lo;
+    const ldCls = isHi ? ' warn' : isLo ? ' warn-lo' : '';
+    return `
+    <div class="lmc${isHi?' warn':isLo?' warn-lo':''}" id="lmc-card-${s.idx}">
+      <div class="lmc-hd">
+        <div>
+          <div class="lmc-nm">${m.label}</div>
+          <div class="lmc-eq">${s.equipName}</div>
+        </div>
+        <div class="lmc-ld${ldCls}" id="lmc-dot-${s.idx}"></div>
+      </div>
+      <div class="lmc-vl${isHi?' hi':isLo?' lo':''}" id="lmc-val-${s.idx}">
+        ${s.value.toFixed(2)}<span class="lmc-unit">${m.unit}</span>
+      </div>
+      <div class="lmc-bar">
+        <div class="lmc-trk">
+          <div class="lmc-fill${isHi?' hi':isLo?' lo':''}" id="lmc-bar-${s.idx}" style="width:${Math.max(1,pct)}%"></div>
+        </div>
+        <div class="lmc-rng"><span>${m.min} ${m.unit}</span><span>${m.max} ${m.unit}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateLiveCards() {
+  for (const s of simSensors) {
+    const valEl = document.getElementById(`lmc-val-${s.idx}`);
+    const barEl = document.getElementById(`lmc-bar-${s.idx}`);
+    const dotEl = document.getElementById(`lmc-dot-${s.idx}`);
+    const cardEl= document.getElementById(`lmc-card-${s.idx}`);
+    if (!valEl) continue;
+    const m    = s.metric;
+    const pct  = Math.round(((s.value - m.min) / (m.max - m.min)) * 100);
+    const isHi = m.warn_hi && s.value > m.warn_hi;
+    const isLo = m.warn_lo && s.value < m.warn_lo;
+    valEl.innerHTML = `${s.value.toFixed(2)}<span class="lmc-unit">${m.unit}</span>`;
+    valEl.className = `lmc-vl${isHi?' hi':isLo?' lo':''}`;
+    if (barEl) { barEl.style.width = Math.max(1,pct)+'%'; barEl.className = `lmc-fill${isHi?' hi':isLo?' lo':''}`; }
+    if (dotEl) { dotEl.className = `lmc-ld${isHi?' warn':isLo?' warn-lo':''}`; }
+    if (cardEl) { cardEl.className = `lmc${isHi?' warn':isLo?' warn-lo':''}`; }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LIVE CHARTS (Telemetry page)
+// ═══════════════════════════════════════════════════════════════
+function renderLiveCharts() {
+  const wrap = document.getElementById('live-charts-wrap');
+  if (!wrap) return;
+
+  for (const s of simSensors) {
+    if (s.chartObj) { s.chartObj.destroy(); s.chartObj = null; }
+  }
+
+  const shown = simSensors.slice(0, 8);
+  if (!shown.length) {
+    wrap.innerHTML = '<div class="empty" style="grid-column:1/-1">Нет данных</div>';
+    return;
+  }
+
+  wrap.innerHTML = shown.map(s => `
+    <div class="lcp">
+      <div class="lcp-h">
+        <div class="lmc-ld"></div>
+        <div class="lcp-t">${s.equipName} · ${s.metric.label}</div>
+        <div class="lcp-v" id="lcpv-${s.idx}">${s.value.toFixed(2)} ${s.metric.unit}</div>
+      </div>
+      <div class="lcp-c"><canvas id="lcc-${s.idx}"></canvas></div>
+    </div>`).join('');
+
+  for (const s of shown) {
+    const canvas = document.getElementById(`lcc-${s.idx}`);
+    if (!canvas) continue;
+    const color = LIVE_COLORS[s.idx % LIVE_COLORS.length];
+    s.chartObj = new Chart(canvas.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels:   s.history.map(() => ''),
+        datasets: [{ data: s.history.map(h => h.v), borderColor: color, backgroundColor: hexToRgba(color, 0.06), borderWidth: 1.5, pointRadius: 0, fill: true, tension: 0.35 }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: {
+          x: { display: false },
+          y: {
+            grid:  { color: 'rgba(0,200,255,.05)', drawTicks: false },
+            ticks: { color: '#243c52', font: { family: 'Share Tech Mono', size: 8 }, maxTicksLimit: 3 },
+            min:   s.metric.min * 0.95,
+            max:   s.metric.max * 1.05,
+          },
+        },
+      },
+    });
+  }
+}
+
+function updateLiveCharts() {
+  for (const s of simSensors.slice(0, 8)) {
+    const vEl = document.getElementById(`lcpv-${s.idx}`);
+    if (vEl) {
+      const isHi = s.metric.warn_hi && s.value > s.metric.warn_hi;
+      const isLo = s.metric.warn_lo && s.value < s.metric.warn_lo;
+      vEl.textContent = `${s.value.toFixed(2)} ${s.metric.unit}`;
+      vEl.className   = `lcp-v${isHi?' hi':isLo?' lo':''}`;
+    }
+    if (!s.chartObj) continue;
+    const ds = s.chartObj.data.datasets[0];
+    const lb = s.chartObj.data.labels;
+    ds.data.push(s.value);
+    lb.push('');
+    if (ds.data.length > 60) { ds.data.shift(); lb.shift(); }
+    s.chartObj.update('none');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DASHBOARD MINI (live sensor strip)
+// ═══════════════════════════════════════════════════════════════
+function renderDashMini() {
+  const grid = document.getElementById('dash-live-metrics');
+  if (!grid) return;
+
+  if (!simSensors.length && cachedEq.length > 0) {
+    grid.innerHTML = cachedEq.slice(0, 4).map(eq => `
+      <div class="kc" style="margin:0">
+        <div class="kc-lbl">${escHtml(eq.equipment_type_name || 'Датчик')}</div>
+        <div class="kc-val" style="font-size:18px;color:var(--text-3)">—</div>
+        <div class="kc-sub">${escHtml(eq.name)}</div>
+      </div>`).join('');
+    return;
+  }
+
+  const top4 = simSensors.slice(0, 4);
+  if (!top4.length) return;
+
+  grid.innerHTML = top4.map((s, i) => {
+    const isHi  = s.metric.warn_hi && s.value > s.metric.warn_hi;
+    const isLo  = s.metric.warn_lo && s.value < s.metric.warn_lo;
+    const color = isHi ? 'var(--red)' : isLo ? 'var(--amber)' : 'var(--text-1)';
+    const pct   = Math.max(2, Math.min(100, ((s.value - s.metric.min) / (s.metric.max - s.metric.min)) * 100)).toFixed(0);
+    return `
+      <div class="kc" style="margin:0;cursor:pointer;transition:all var(--tr)" onclick="showPage('telemetry')">
+        <div class="kc-lbl" style="display:flex;align-items:center;justify-content:space-between">
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(s.metric.label)}</span>
+          <div style="width:6px;height:6px;border-radius:50%;background:${isHi?'var(--red)':isLo?'var(--amber)':'var(--green)'};box-shadow:0 0 6px ${isHi?'var(--red)':isLo?'var(--amber)':'var(--green)'};animation:blink 1.5s infinite;flex-shrink:0"></div>
+        </div>
+        <div id="dmv-${i}" class="kc-val" style="font-size:24px;color:${color}">${s.value.toFixed(1)}</div>
+        <div class="kc-sub">${escHtml(s.equipName)} · <span style="color:var(--text-2)">${escHtml(s.metric.unit)}</span></div>
+        <div style="margin-top:8px;height:3px;background:rgba(0,0,0,.4);border-radius:2px;overflow:hidden">
+          <div id="dmbar-${i}" style="height:100%;border-radius:2px;background:${color};width:${pct}%;transition:width .5s,background .3s"></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function updateDashMini() {
+  const top4 = simSensors.slice(0, 4);
+  for (let i = 0; i < top4.length; i++) {
+    const s     = top4[i];
+    const valEl = document.getElementById(`dmv-${i}`);
+    const barEl = document.getElementById(`dmbar-${i}`);
+    if (!valEl) { renderDashMini(); return; }
+    const isHi  = s.metric.warn_hi && s.value > s.metric.warn_hi;
+    const isLo  = s.metric.warn_lo && s.value < s.metric.warn_lo;
+    const color = isHi ? 'var(--red)' : isLo ? 'var(--amber)' : 'var(--text-1)';
+    const pct   = Math.max(2, Math.min(100, ((s.value - s.metric.min) / (s.metric.max - s.metric.min)) * 100)).toFixed(0);
+    valEl.textContent = s.value.toFixed(1);
+    valEl.style.color = color;
+    if (barEl) { barEl.style.width = pct+'%'; barEl.style.background = color; }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════════
+function fmtD(d) {
+  if (!d) return '–';
+  return new Date(d).toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+function fmtN(n, dec = 0) {
+  return n == null ? '–' : Number(n).toLocaleString('ru-RU', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+function fmtC(n) {
+  if (n == null) return '–';
+  const v = Number(n);
+  if (v >= 1e9) return (v/1e9).toFixed(1)+' млрд ₽';
+  if (v >= 1e6) return (v/1e6).toFixed(1)+' млн ₽';
+  if (v >= 1e3) return (v/1e3).toFixed(0)+' тыс. ₽';
+  return v.toFixed(0)+' ₽';
+}
+
+const STATUS_RU = {
+  active:'Активное', maintenance:'На обслуживании', requires_maintenance:'Требует ТО',
+  in_repair:'В ремонте', decommissioned:'Списано', storage:'На складе',
+  open:'Открытая', in_progress:'В работе', completed:'Выполнена', cancelled:'Отменена',
+  preventive:'Плановое ТО', corrective:'Корректирующее', inspection:'Инспекция',
+  admin:'Администратор', engineer:'Инженер', storekeeper:'Кладовщик', auditor:'Аудитор', viewer:'Наблюдатель',
+  I:'Добавление', U:'Обновление', D:'Удаление',
+};
+
+function badge(val) {
+  if (!val) return '';
+  return `<span class="b b-${val}">${STATUS_RU[val] || val.replace(/_/g,' ')}</span>`;
+}
+
+const _dbt = {};
+function debounce(fn, ms) {
+  return function(...a) { clearTimeout(_dbt[fn.name]); _dbt[fn.name] = setTimeout(() => fn(...a), ms); };
+}
+
+function toast(msg, type = 'info') {
+  const el  = document.createElement('div');
+  el.className = `toast t-${type === 'success' ? 'ok' : type === 'error' ? 'err' : 'info'}`;
+  el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+async function api(path, opts = {}) {
+  const h = { 'Content-Type': 'application/json' };
+  if (token) h['Authorization'] = `Bearer ${token}`;
+  const r = await fetch(API + path, { ...opts, headers: { ...h, ...(opts.headers||{}) } });
+  if (r.status === 204) return null;
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.detail || r.statusText);
+  return d;
+}
+
+function openOv(id)  { document.getElementById(id)?.classList.add('open'); }
+function closeOv(id) { document.getElementById(id)?.classList.remove('open'); }
+document.addEventListener('click', e => { if (e.target.classList.contains('ov')) e.target.classList.remove('open'); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.ov.open').forEach(o => o.classList.remove('open')); });
+
+function pSel(id, items, valKey, lblKey, placeholder) {
+  const el = document.getElementById(id);
+  if (!el || !Array.isArray(items)) return;
+  el.innerHTML = (placeholder ? `<option value="">${placeholder}</option>` : '') +
+    items.map(i => `<option value="${i[valKey]}">${escHtml(String(i[lblKey]))}</option>`).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════════════
+function setDemo(em, pw) {
+  document.getElementById('l-em').value = em;
+  document.getElementById('l-pw').value = pw;
+}
+
+async function doLogin() {
+  const email    = document.getElementById('l-em').value.trim();
+  const password = document.getElementById('l-pw').value;
+  if (!email || !password) { toast('Введите email и пароль', 'error'); return; }
+  try {
+    const r = await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+    token = r.access_token;
+    localStorage.setItem('ems_token', token);
+    currentUser = r;
+    applyUser();
+    document.getElementById('ls').style.display = 'none';
+    await loadRefData();
+    showPage('dashboard');
+  } catch (e) {
+    toast('Ошибка входа: ' + e.message, 'error');
+  }
+}
+
+function logout() {
+  stopSimulator();
+  token = null;
+  localStorage.removeItem('ems_token');
+  location.reload();
+}
+
+function applyUser() {
+  if (!currentUser) return;
+  const role = currentUser.role;
+  document.getElementById('u-av').textContent = currentUser.full_name.slice(0, 2).toUpperCase();
+  document.getElementById('u-nm').textContent  = currentUser.full_name;
+  document.getElementById('u-rl').textContent  = STATUS_RU[role] || role;
+
+  if (!['admin','auditor'].includes(role)) {
+    document.getElementById('nav-audit').style.display = 'none';
+    document.getElementById('nav-emp').style.display   = 'none';
+  }
+  if (['admin','storekeeper'].includes(role)) {
+    document.getElementById('eq-add-btn').innerHTML =
+      '<button class="btn btn-p btn-sm" onclick="openAddEqModal()">+ Добавить оборудование</button>';
+  }
+  if (['admin','engineer'].includes(role)) {
+    document.getElementById('task-add-btn').innerHTML =
+      '<button class="btn btn-p btn-sm" onclick="openAddTaskModal()">+ Создать задачу</button>';
+  }
+}
+
+async function tryAutoLogin() {
+  if (!token) return;
+  try {
+    const me = await api('/api/auth/me');
+    currentUser = { ...me, access_token: token };
+    applyUser();
+    document.getElementById('ls').style.display = 'none';
+    await loadRefData();
+    showPage('dashboard');
+  } catch {
+    token = null;
+    localStorage.removeItem('ems_token');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+const PAGE_TITLES = {
+  dashboard: 'Информационная панель', equipment: 'Реестр оборудования', locations: 'Локации и склады',
+  telemetry: 'Мониторинг датчиков', maintenance: 'Обслуживание и ремонты',
+  audit: 'Журнал аудита', employees: 'Реестр сотрудников', roles: 'Матрица прав доступа',
+};
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
+  const pageEl = document.getElementById(`page-${name}`);
+  if (!pageEl) return;
+  pageEl.classList.add('active');
+  document.querySelectorAll('.ni').forEach(n => {
+    if (n.getAttribute('onclick')?.includes(`'${name}'`)) n.classList.add('active');
+  });
+  document.getElementById('tb-title').textContent = (PAGE_TITLES[name] || name).toUpperCase();
+
+  switch (name) {
+    case 'dashboard':   loadDashboard(); break;
+    case 'equipment':   populateForms(); loadEquipment(); break;
+    case 'locations':   loadLocations(); break;
+    case 'telemetry':
+      populateForms();
+      renderLiveCards();
+      renderLiveCharts();
+      pSel('tel-eq-sel', cachedEq, 'id', 'name', '— Выберите оборудование —');
+      break;
+    case 'maintenance': populateForms(); loadTasks(); loadTaskStats(); break;
+    case 'audit':       loadAudit(); break;
+    case 'employees':   loadEmployees(); break;
+    case 'roles':       loadRoleMatrix(); break;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// REF DATA
+// ═══════════════════════════════════════════════════════════════
+async function loadRefData() {
+  try {
+    const [types, locs, eqResp] = await Promise.all([
+      api('/api/equipment/types'),
+      api('/api/equipment/locations'),
+      api('/api/equipment?per_page=100'),
+    ]);
+    const emps = token ? await api('/api/employees').catch(() => []) : [];
+    cachedTypes = types || [];
+    cachedLocs  = locs  || [];
+    cachedEmps  = emps  || [];
+    cachedEq    = eqResp?.items || [];
+
+    populateForms();
+    if (cachedEq.length > 0 && simSensors.length === 0) {
+      initSimulator(cachedEq);
+    }
+    const activePage = document.querySelector('.page.active')?.id;
+    if (activePage === 'page-dashboard') {
+      const cacheStats = buildStatsFromCache();
+      applyDashStats(cacheStats);
+      renderDashMini();
+    }
+  } catch (e) {
+    console.warn('loadRefData error:', e);
+  }
+}
+
+function populateForms() {
+  const tpFilter = document.getElementById('eq-tp');
+  if (tpFilter) {
+    tpFilter.innerHTML = '<option value="">Все типы</option>' +
+      cachedTypes.map(t => `<option value="${t.id}">${escHtml(t.name)}</option>`).join('');
+  }
+  pSel('eq-tp-sel',   cachedTypes, 'id', 'name', '— Выберите тип —');
+  pSel('eq-loc-sel',  cachedLocs,  'id', 'name', '— Не задано —');
+  pSel('eq-resp-sel', cachedEmps,  'id', 'full_name', '— Не задано —');
+  pSel('mv-loc',      cachedLocs,  'id', 'name', '— Выберите локацию —');
+  pSel('task-eq',     cachedEq,    'id', 'name', '— Выберите оборудование —');
+  pSel('task-asgn',   cachedEmps,  'id', 'full_name', '— Не назначен —');
+  pSel('loc-par',     cachedLocs,  'id', 'name', '— Верхний уровень —');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════════════
+function buildStatsFromCache() {
+  const byStatus = {}, byType = {};
+  let totalCost = 0, totalRes = 0;
+  for (const eq of cachedEq) {
+    byStatus[eq.status] = (byStatus[eq.status] || 0) + 1;
+    const tn = eq.equipment_type_name || 'Неизвестно';
+    byType[tn] = (byType[tn] || 0) + 1;
+    totalCost += Number(eq.purchase_cost || 0);
+    totalRes  += Number(eq.residual_value || 0);
+  }
+  return {
+    total_equipment:      cachedEq.length,
+    active_equipment:     byStatus.active               || 0,
+    in_repair:            (byStatus.in_repair            || 0) + (byStatus.requires_maintenance || 0),
+    requires_maintenance: byStatus.requires_maintenance  || 0,
+    decommissioned:       byStatus.decommissioned        || 0,
+    storage:              byStatus.storage               || 0,
+    open_tasks: 0, in_progress_tasks: 0, completed_tasks_month: 0,
+    total_purchase_value: totalCost,
+    total_residual_value: totalRes,
+    equipment_by_status:  byStatus,
+    equipment_by_type:    byType,
+    tasks_by_type:        {},
+  };
+}
+
+function applyDashStats(s) {
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('d-total',   s.total_equipment);
+  set('d-active',  s.active_equipment);
+  set('d-repair',  s.in_repair);
+  set('d-tasks',   s.open_tasks);
+  set('d-decomm',  s.decommissioned);
+  set('d-storage', s.storage !== undefined ? s.storage : (s.equipment_by_status?.storage || 0));
+  set('d-cost',    fmtC(s.total_purchase_value));
+  set('d-res',     fmtC(s.total_residual_value));
+  set('nb-eq',     s.total_equipment);
+  set('nb-tasks',  s.open_tasks);
+
+  const deprEl = document.getElementById('d-depr-sub');
+  if (deprEl && s.total_purchase_value > 0) {
+    const pct = ((1 - s.total_residual_value / s.total_purchase_value) * 100).toFixed(0);
+    deprEl.textContent = `амортизация ${pct}%`;
+  }
+
+  const maintSub = document.getElementById('d-maint-sub');
+  if (maintSub) {
+    const rm = s.in_repair || 0;
+    const mt = s.requires_maintenance || s.equipment_by_status?.requires_maintenance || 0;
+    maintSub.textContent = `ремонт: ${rm - mt}, требует ТО: ${mt}`;
+  }
+
+  const SC = {
+    active:'#00e676', maintenance:'#ffb800', requires_maintenance:'#ff7043',
+    in_repair:'#ff3d57', decommissioned:'#243c52', storage:'#00c8ff',
+  };
+  mkDonut('ch-eq-status', s.equipment_by_status, SC);
+  mkDonut('ch-eq-type',   s.equipment_by_type,   null);
+  mkBar('ch-task-status', {
+    'Открытые':         s.open_tasks            || 0,
+    'В работе':         s.in_progress_tasks     || 0,
+    'Выполнено (мес.)': s.completed_tasks_month || 0,
+  }, ['#ffb800','#00c8ff','#00e676']);
+
+  const tbt = s.tasks_by_type || {};
+  mkDonut('ch-task-type', Object.keys(tbt).length ? tbt : { 'Нет данных': 1 },
+    Object.keys(tbt).length ? { preventive:'#00c8ff', corrective:'#ff3d57', inspection:'#b388ff' } : { 'Нет данных': '#243c52' });
+
+  renderStatusBars(s.equipment_by_status, s.total_equipment);
+  renderDashEqList();
+}
+
+function renderStatusBars(byStatus, total) {
+  const container = document.getElementById('dash-status-bars');
+  if (!container || !byStatus) return;
+  const order = [
+    { key:'active',               label:'Активное',    col:'#00e676' },
+    { key:'in_repair',            label:'В ремонте',   col:'#ff3d57' },
+    { key:'requires_maintenance', label:'Требует ТО',  col:'#ff7043' },
+    { key:'maintenance',          label:'Обслуживание',col:'#ffb800' },
+    { key:'storage',              label:'На складе',   col:'#00c8ff' },
+    { key:'decommissioned',       label:'Списано',     col:'#2d4a5e' },
+  ];
+  const t = total || 1;
+  container.innerHTML = order.map(({ key, label, col }) => {
+    const cnt = byStatus[key] || 0;
+    const pct = Math.round(cnt / t * 100);
+    return `
+      <div class="sbar-item">
+        <div class="sbar-hd">
+          <span class="sbar-lbl">${label}</span>
+          <span class="sbar-cnt">${cnt} ед. · ${pct}%</span>
+        </div>
+        <div class="sbar-track">
+          <div class="sbar-fill" style="width:${pct}%;background:${col}"></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderDashEqList() {
+  const tb = document.getElementById('dash-eq-list');
+  if (!tb) return;
+  const items = [...cachedEq]
+    .sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0))
+    .slice(0, 8);
+  if (!items.length) {
+    tb.innerHTML = '<tr><td colspan="4" class="empty">Нет данных</td></tr>';
+    return;
+  }
+  tb.innerHTML = items.map(eq => `
+    <tr>
+      <td>
+        <div style="font-weight:600;font-size:12px">${escHtml(eq.name)}</div>
+        <div class="mono" style="color:var(--text-3);font-size:10px">${escHtml(eq.serial_number)}</div>
+      </td>
+      <td>${badge(eq.status)}</td>
+      <td style="color:var(--text-2);font-size:11px">${escHtml(eq.equipment_type_name || '–')}</td>
+      <td class="mono">${fmtN(eq.operation_hours)} ч</td>
+    </tr>`).join('');
+}
+
+async function loadDashboard() {
+  renderDashMini();
+  const cacheStats = buildStatsFromCache();
+  applyDashStats(cacheStats);
+  updateNotifBadges();
+
+  try {
+    const s = await api('/api/dashboard/stats');
+    applyDashStats({
+      ...cacheStats,
+      open_tasks:            s.open_tasks            || 0,
+      in_progress_tasks:     s.in_progress_tasks     || 0,
+      completed_tasks_month: s.completed_tasks_month || 0,
+      tasks_by_type:         s.tasks_by_type         || {},
+      total_purchase_value:  s.total_purchase_value  || cacheStats.total_purchase_value,
+      total_residual_value:  s.total_residual_value  || cacheStats.total_residual_value,
+    });
+  } catch {}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CHART HELPERS
+// ═══════════════════════════════════════════════════════════════
+const STATUS_LABELS_RU = {
+  active:'Активное', maintenance:'Обслуживание', requires_maintenance:'Требует ТО',
+  in_repair:'В ремонте', decommissioned:'Списано', storage:'Склад',
+  preventive:'Плановое ТО', corrective:'Корректирующее', inspection:'Инспекция',
+};
+
+function mkDonut(id, obj, colorMap) {
+  const filtered = Object.fromEntries(Object.entries(obj || {}).filter(([, v]) => v > 0));
+  const src = Object.keys(filtered).length ? filtered : { 'Нет данных': 1 };
+  const isPlaceholder = !Object.keys(filtered).length;
+  const labels = Object.keys(src).map(k => STATUS_LABELS_RU[k] || k);
+  const data   = Object.values(src);
+  const cols   = isPlaceholder
+    ? ['#1a2e3e']
+    : colorMap
+      ? Object.keys(src).map(k => colorMap[k] || '#243c52')
+      : LIVE_COLORS.slice(0, data.length);
+
+  if (CHARTS[id]) CHARTS[id].destroy();
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  CHARTS[id] = new Chart(canvas.getContext('2d'), {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: cols, borderWidth: 0, hoverOffset: 5 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { color: '#5a82a0', font: { family: 'Share Tech Mono', size: 9 }, padding: 12, boxWidth: 8 },
+        },
+      },
+      cutout: '68%',
+    },
+  });
+}
+
+function mkBar(id, obj, cols) {
+  const hasData = Object.values(obj).some(v => v > 0);
+  if (CHARTS[id]) CHARTS[id].destroy();
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  CHARTS[id] = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels:   Object.keys(obj),
+      datasets: [{ data: Object.values(obj), backgroundColor: cols, borderRadius: 4, borderWidth: 0 }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          grid:  { color: 'rgba(0,200,255,.05)' },
+          ticks: { color: '#5a82a0', font: { family: 'Share Tech Mono', size: 9 } },
+          min: 0,
+          suggestedMax: hasData ? undefined : 1,
+        },
+        y: { grid: { display: false }, ticks: { color: '#5a82a0', font: { family: 'Share Tech Mono', size: 10 } } },
+      },
+    },
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HISTORICAL CHART
+// ═══════════════════════════════════════════════════════════════
+async function onTelEqChange() {
+  const eqId = document.getElementById('tel-eq-sel')?.value;
+  if (!eqId) return;
+  try {
+    const metrics = await api(`/api/telemetry/metrics?equipment_id=${eqId}`);
+    const sel = document.getElementById('tel-met-sel');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— Выберите метрику —</option>' +
+      metrics.map(m => `<option value="${escHtml(m)}">${escHtml(m)}</option>`).join('');
+  } catch (e) { toast('Ошибка загрузки метрик: ' + e.message, 'error'); }
+}
+
+async function loadHistChart() {
+  const eqId = document.getElementById('tel-eq-sel')?.value;
+  const met  = document.getElementById('tel-met-sel')?.value;
+  const hrs  = document.getElementById('tel-hrs')?.value || '24';
+  if (!eqId || !met) { toast('Выберите оборудование и метрику', 'info'); return; }
+  try {
+    const [cd, sm] = await Promise.all([
+      api(`/api/telemetry/chart?equipment_id=${eqId}&metric_name=${encodeURIComponent(met)}&hours=${hrs}`),
+      api(`/api/telemetry/summary?equipment_id=${eqId}&metric_name=${encodeURIComponent(met)}&hours=${hrs}`),
+    ]);
+    const s = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    s('h-min', sm.min != null ? fmtN(sm.min, 3) : '–');
+    s('h-max', sm.max != null ? fmtN(sm.max, 3) : '–');
+    s('h-avg', sm.avg != null ? fmtN(sm.avg, 3) : '–');
+    s('h-cnt', sm.count || 0);
+
+    if (CHARTS['ch-hist']) CHARTS['ch-hist'].destroy();
+    const ctx = document.getElementById('ch-hist')?.getContext('2d');
+    if (!ctx) return;
+    const labels = cd.points.map(p => new Date(p.timestamp).toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' }));
+    CHARTS['ch-hist'] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{ label: met, data: cd.points.map(p => p.value), borderColor: '#00c8ff', backgroundColor: hexToRgba('#00c8ff', 0.05), borderWidth: 1.5, pointRadius: cd.points.length > 200 ? 0 : 2, fill: true, tension: 0.3 }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+        scales: {
+          x: { grid: { color: 'rgba(0,200,255,.04)' }, ticks: { color: '#5a82a0', font: { family: 'Share Tech Mono', size: 8 }, maxTicksLimit: 10 } },
+          y: { grid: { color: 'rgba(0,200,255,.04)' }, ticks: { color: '#5a82a0', font: { family: 'Share Tech Mono', size: 9 } } },
+        },
+        interaction: { mode: 'nearest', axis: 'x', intersect: false },
+      },
+    });
+  } catch (e) { toast('Ошибка загрузки: ' + e.message, 'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EQUIPMENT
+// ═══════════════════════════════════════════════════════════════
+function canDo(res, act) {
+  const pm = {
+    admin:       { equipment: ['read','write','move','update','decommission'], maintenance: ['read','write'] },
+    engineer:    { equipment: ['read','update'],                               maintenance: ['read','write'] },
+    storekeeper: { equipment: ['read','write','move','update'],                maintenance: ['read'] },
+    auditor:     { equipment: ['read'],                                        maintenance: ['read'] },
+    viewer:      { equipment: ['read'],                                        maintenance: ['read'] },
+  };
+  return (pm[currentUser?.role]?.[res] || []).includes(act);
+}
+
+async function loadEquipment() {
+  const srch = document.getElementById('eq-search')?.value || '';
+  const st   = document.getElementById('eq-st')?.value   || '';
+  const tp   = document.getElementById('eq-tp')?.value   || '';
+  const pg   = PAGES.eq;
+  const p    = new URLSearchParams({ page: pg, per_page: 15 });
+  if (srch) p.set('search', srch);
+  if (st)   p.set('status', st);
+  if (tp)   p.set('type_id', tp);
+
+  const tb = document.getElementById('eq-tbody');
+  tb.innerHTML = '<tr><td colspan="8"><div class="empty"><div class="spin"></div></div></td></tr>';
+  try {
+    const r = await api(`/api/equipment?${p}`);
+    r.items.forEach(eq => { EQ_STORE[eq.id] = eq; });
+    if (!r.items.length) {
+      tb.innerHTML = '<tr><td colspan="8"><div class="empty">Оборудование не найдено</div></td></tr>';
+      document.getElementById('eq-pag').innerHTML = '';
+      return;
+    }
+    tb.innerHTML = r.items.map(eq => `
+      <tr>
+        <td>
+          <div style="font-weight:600">${escHtml(eq.name)}</div>
+          <div class="mono" style="color:var(--text-3);font-size:10px">${escHtml(eq.inventory_number || '')}</div>
+        </td>
+        <td class="mono">${escHtml(eq.serial_number)}</td>
+        <td>${escHtml(eq.equipment_type_name || '–')}</td>
+        <td>${escHtml(eq.location_name || '–')}</td>
+        <td>${badge(eq.status)}</td>
+        <td class="mono">${fmtN(eq.operation_hours)} ч</td>
+        <td class="mono">${fmtC(eq.purchase_cost)}</td>
+        <td>
+          <div style="display:flex;gap:3px">
+            ${canDo('equipment','move') ? `<button class="btn btn-g btn-sm btn-ico" title="Переместить" onclick="openMoveModal('${eq.id}')">↗</button>` : ''}
+            ${canDo('equipment','update') ? `<button class="btn btn-g btn-sm btn-ico" title="Редактировать" onclick="openEditEqModal('${eq.id}')">✎</button>` : ''}
+            ${canDo('equipment','decommission') && eq.status !== 'decommissioned' ? `<button class="btn btn-d btn-sm btn-ico" title="Списать" onclick="openDecommModal('${eq.id}')">⊗</button>` : ''}
+          </div>
+        </td>
+      </tr>`).join('');
+    renderPag('eq-pag', r.total, 15, pg, p => { PAGES.eq = p; loadEquipment(); });
+  } catch (e) {
+    tb.innerHTML = `<tr><td colspan="8" style="color:var(--red);text-align:center;padding:20px">${escHtml(e.message)}</td></tr>`;
+  }
+}
+
+const debouncedLoadEquipment = debounce(loadEquipment, 400);
+
+function openAddEqModal() {
+  document.getElementById('eq-mt').textContent = 'Добавить оборудование';
+  document.getElementById('eq-id').value = '';
+  ['eq-name','eq-sn','eq-inv','eq-hrs','eq-cost','eq-res'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('eq-date').value    = new Date().toISOString().slice(0, 10);
+  document.getElementById('eq-st-sel').value  = 'active';
+  document.getElementById('eq-tp-sel').selectedIndex  = 0;
+  document.getElementById('eq-loc-sel').selectedIndex = 0;
+  document.getElementById('eq-resp-sel').selectedIndex= 0;
+  openOv('ov-eq');
+}
+
+function openEditEqModal(id) {
+  const eq = EQ_STORE[id];
+  if (!eq) { toast('Данные не найдены', 'error'); return; }
+  document.getElementById('eq-mt').textContent      = 'Редактировать оборудование';
+  document.getElementById('eq-id').value             = eq.id;
+  document.getElementById('eq-name').value           = eq.name;
+  document.getElementById('eq-sn').value             = eq.serial_number;
+  document.getElementById('eq-inv').value            = eq.inventory_number || '';
+  document.getElementById('eq-st-sel').value         = eq.status;
+  document.getElementById('eq-cost').value           = eq.purchase_cost;
+  document.getElementById('eq-res').value            = eq.residual_value || '';
+  document.getElementById('eq-date').value           = eq.purchase_date;
+  document.getElementById('eq-hrs').value            = eq.operation_hours;
+  if (eq.equipment_type_id) document.getElementById('eq-tp-sel').value  = eq.equipment_type_id;
+  if (eq.location_id)       document.getElementById('eq-loc-sel').value  = eq.location_id;
+  else                      document.getElementById('eq-loc-sel').value  = '';
+  if (eq.responsible_employee_id) document.getElementById('eq-resp-sel').value = eq.responsible_employee_id;
+  else                            document.getElementById('eq-resp-sel').value = '';
+  openOv('ov-eq');
+}
+
+async function saveEq() {
+  const id   = document.getElementById('eq-id').value.trim();
+  const name = document.getElementById('eq-name').value.trim();
+  const sn   = document.getElementById('eq-sn').value.trim();
+  const cost = parseFloat(document.getElementById('eq-cost').value);
+  if (!name) { toast('Введите наименование', 'error'); return; }
+  if (!id && !sn) { toast('Введите серийный номер', 'error'); return; }
+  if (!id && isNaN(cost)) { toast('Введите закупочную стоимость', 'error'); return; }
+  try {
+    if (id) {
+      await api(`/api/equipment/${id}`, { method: 'PATCH', body: JSON.stringify({
+        name,
+        location_id:             document.getElementById('eq-loc-sel').value || null,
+        responsible_employee_id: document.getElementById('eq-resp-sel').value || null,
+        status:                  document.getElementById('eq-st-sel').value,
+        residual_value:          document.getElementById('eq-res').value ? parseFloat(document.getElementById('eq-res').value) : null,
+        operation_hours:         parseInt(document.getElementById('eq-hrs').value) || 0,
+      })});
+      toast('Оборудование обновлено', 'success');
+    } else {
+      const typeId = document.getElementById('eq-tp-sel').value;
+      if (!typeId) { toast('Выберите тип оборудования', 'error'); return; }
+      await api('/api/equipment', { method: 'POST', body: JSON.stringify({
+        name, serial_number: sn,
+        inventory_number:        document.getElementById('eq-inv').value.trim() || null,
+        equipment_type_id:       typeId,
+        location_id:             document.getElementById('eq-loc-sel').value || null,
+        responsible_employee_id: document.getElementById('eq-resp-sel').value || null,
+        status:                  document.getElementById('eq-st-sel').value,
+        purchase_cost:           cost,
+        residual_value:          document.getElementById('eq-res').value ? parseFloat(document.getElementById('eq-res').value) : null,
+        purchase_date:           document.getElementById('eq-date').value,
+        operation_hours:         parseInt(document.getElementById('eq-hrs').value) || 0,
+      })});
+      toast('Оборудование добавлено', 'success');
+      await loadRefData();
+    }
+    closeOv('ov-eq');
+    loadEquipment();
+  } catch (e) { toast('Ошибка: ' + e.message, 'error'); }
+}
+
+function openMoveModal(id) {
+  document.getElementById('mv-id').value     = id;
+  document.getElementById('mv-reason').value = '';
+  document.getElementById('mv-loc').value    = '';
+  openOv('ov-move');
+}
+
+async function confirmMove() {
+  const id  = document.getElementById('mv-id').value;
+  const loc = document.getElementById('mv-loc').value;
+  if (!loc) { toast('Выберите расположение', 'error'); return; }
+  try {
+    await api(`/api/equipment/${id}/move`, { method: 'POST', body: JSON.stringify({ location_id: loc, reason: document.getElementById('mv-reason').value || null }) });
+    toast('Оборудование перемещено', 'success');
+    closeOv('ov-move');
+    loadEquipment();
+  } catch (e) { toast('Ошибка: ' + e.message, 'error'); }
+}
+
+function openDecommModal(id) {
+  document.getElementById('dc-id').value     = id;
+  document.getElementById('dc-reason').value = '';
+  openOv('ov-decomm');
+}
+
+async function confirmDecomm() {
+  const id     = document.getElementById('dc-id').value;
+  const reason = document.getElementById('dc-reason').value.trim();
+  if (!reason) { toast('Введите причину', 'error'); return; }
+  try {
+    await api(`/api/equipment/${id}/decommission`, { method: 'POST', body: JSON.stringify({ reason }) });
+    toast('Оборудование списано', 'success');
+    closeOv('ov-decomm');
+    loadEquipment();
+  } catch (e) { toast('Ошибка: ' + e.message, 'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LOCATIONS
+// ═══════════════════════════════════════════════════════════════
+async function loadLocations() {
+  try {
+    const locs = await api('/api/equipment/locations');
+    const lm   = Object.fromEntries(locs.map(l => [l.id, l.name]));
+    const cnt  = {};
+    cachedEq.forEach(e => { if (e.location_id) cnt[e.location_id] = (cnt[e.location_id] || 0) + 1; });
+    document.getElementById('loc-tbody').innerHTML = locs.length
+      ? locs.map(l => `<tr>
+          <td><strong>${escHtml(l.name)}</strong></td>
+          <td class="mono">${escHtml(l.address || '–')}</td>
+          <td>${l.parent_location_id ? escHtml(lm[l.parent_location_id] || '–') : '–'}</td>
+          <td class="mono" style="color:var(--cyan)">${cnt[l.id] || 0}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="4" class="empty">Локации не найдены</td></tr>';
+  } catch (e) {
+    document.getElementById('loc-tbody').innerHTML = `<tr><td colspan="4" style="color:var(--red);text-align:center;padding:20px">${e.message}</td></tr>`;
+  }
+}
+
+function openLocModal() {
+  document.getElementById('loc-name').value = '';
+  document.getElementById('loc-addr').value = '';
+  document.getElementById('loc-par').value  = '';
+  openOv('ov-loc');
+}
+
+async function saveLoc() {
+  const name = document.getElementById('loc-name').value.trim();
+  if (!name) { toast('Введите название', 'error'); return; }
+  try {
+    await api('/api/equipment/locations', { method: 'POST', body: JSON.stringify({
+      name,
+      address: document.getElementById('loc-addr').value.trim() || null,
+      parent_location_id: document.getElementById('loc-par').value || null,
+    })});
+    toast('Локация добавлена', 'success');
+    closeOv('ov-loc');
+    await loadRefData();
+    loadLocations();
+  } catch (e) { toast('Ошибка: ' + e.message, 'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAINTENANCE
+// ═══════════════════════════════════════════════════════════════
+async function loadTasks() {
+  const st = document.getElementById('task-st')?.value || '';
+  const tp = document.getElementById('task-tp')?.value || '';
+  const pg = PAGES.task;
+  const p  = new URLSearchParams({ page: pg, per_page: 15 });
+  if (st) p.set('status', st);
+  if (tp) p.set('task_type', tp);
+
+  const tb = document.getElementById('task-tbody');
+  tb.innerHTML = '<tr><td colspan="8"><div class="empty"><div class="spin"></div></div></td></tr>';
+  try {
+    const r = await api(`/api/maintenance?${p}`);
+    r.items.forEach(t => { TASK_STORE[t.id] = t; });
+    if (!r.items.length) {
+      tb.innerHTML = '<tr><td colspan="8"><div class="empty">Задачи не найдены</div></td></tr>';
+      document.getElementById('task-pag').innerHTML = '';
+      return;
+    }
+    tb.innerHTML = r.items.map(t => `
+      <tr>
+        <td>${escHtml(t.equipment_name || '–')}</td>
+        <td>${badge(t.task_type)}</td>
+        <td>${badge(t.status)}</td>
+        <td>${t.assigned_name ? escHtml(t.assigned_name) : '<span style="color:var(--text-3)">Не назначен</span>'}</td>
+        <td class="mono">${fmtD(t.scheduled_at)}</td>
+        <td class="mono">${t.completed_at ? fmtD(t.completed_at) : '–'}</td>
+        <td class="mono">${t.cost ? fmtC(t.cost) : '–'}</td>
+        <td>${canDo('maintenance','write') ? `<button class="btn btn-g btn-sm btn-ico" title="Редактировать" onclick="openEditTaskModal('${t.id}')">✎</button>` : ''}</td>
+      </tr>`).join('');
+    renderPag('task-pag', r.total, 15, pg, p => { PAGES.task = p; loadTasks(); });
+  } catch (e) {
+    tb.innerHTML = `<tr><td colspan="8" style="color:var(--red);text-align:center;padding:20px">${escHtml(e.message)}</td></tr>`;
+  }
+}
+
+async function loadTaskStats() {
+  try {
+    const s = await api('/api/maintenance/stats');
+    document.getElementById('tk-open').textContent = s.by_status?.open        || 0;
+    document.getElementById('tk-prog').textContent = s.by_status?.in_progress || 0;
+    document.getElementById('tk-done').textContent = s.by_status?.completed   || 0;
+  } catch {}
+}
+
+function openAddTaskModal() {
+  document.getElementById('task-mt').textContent       = 'Создать задачу';
+  document.getElementById('task-id').value             = '';
+  document.getElementById('task-desc').value           = '';
+  document.getElementById('task-cost').value           = '0';
+  document.getElementById('task-sched').value          = new Date().toISOString().slice(0, 16);
+  document.getElementById('task-st-sel').value         = 'open';
+  document.getElementById('task-tp-sel').selectedIndex = 0;
+  document.getElementById('task-eq').selectedIndex     = 0;
+  document.getElementById('task-asgn').selectedIndex   = 0;
+  openOv('ov-task');
+}
+
+function openEditTaskModal(id) {
+  const t = TASK_STORE[id];
+  if (!t) { toast('Данные не найдены', 'error'); return; }
+  document.getElementById('task-mt').textContent  = 'Редактировать задачу';
+  document.getElementById('task-id').value        = t.id;
+  document.getElementById('task-tp-sel').value    = t.task_type;
+  document.getElementById('task-st-sel').value    = t.status;
+  document.getElementById('task-desc').value      = t.description || '';
+  document.getElementById('task-cost').value      = t.cost || 0;
+  document.getElementById('task-sched').value     = t.scheduled_at ? t.scheduled_at.slice(0, 16) : '';
+  if (t.equipment_id) document.getElementById('task-eq').value   = t.equipment_id;
+  if (t.assigned_to)  document.getElementById('task-asgn').value = t.assigned_to;
+  else                document.getElementById('task-asgn').value = '';
+  openOv('ov-task');
+}
+
+async function saveTask() {
+  const id       = document.getElementById('task-id').value.trim();
+  const equipId  = document.getElementById('task-eq').value;
+  const schedRaw = document.getElementById('task-sched').value;
+  if (!id && !equipId) { toast('Выберите оборудование', 'error'); return; }
+  if (!schedRaw)        { toast('Укажите дату и время', 'error'); return; }
+  const body = {
+    equipment_id: equipId || undefined,
+    assigned_to:  document.getElementById('task-asgn').value || null,
+    task_type:    document.getElementById('task-tp-sel').value,
+    status:       document.getElementById('task-st-sel').value,
+    description:  document.getElementById('task-desc').value.trim() || null,
+    scheduled_at: new Date(schedRaw).toISOString(),
+    cost:         parseFloat(document.getElementById('task-cost').value) || 0,
+  };
+  try {
+    if (id) {
+      delete body.equipment_id;
+      await api(`/api/maintenance/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+      toast('Задача обновлена', 'success');
+    } else {
+      await api('/api/maintenance', { method: 'POST', body: JSON.stringify(body) });
+      toast('Задача создана', 'success');
+    }
+    closeOv('ov-task');
+    loadTasks();
+    loadTaskStats();
+  } catch (e) { toast('Ошибка: ' + e.message, 'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AUDIT
+// ═══════════════════════════════════════════════════════════════
+async function loadAudit() {
+  const op  = document.getElementById('aud-op')?.value  || '';
+  const tbl = document.getElementById('aud-tbl')?.value || '';
+  const pg  = PAGES.aud;
+  const p   = new URLSearchParams({ page: pg, per_page: 20 });
+  if (op)  p.set('operation', op);
+  if (tbl) p.set('table_name', tbl);
+
+  const tb = document.getElementById('aud-tbody');
+  tb.innerHTML = '<tr><td colspan="7"><div class="empty"><div class="spin"></div></div></td></tr>';
+  try {
+    const r      = await api(`/api/audit?${p}`);
+    const empMap = Object.fromEntries(cachedEmps.map(e => [e.id, e.full_name]));
+    r.items.forEach(a => { AUD_STORE[a.id] = a; });
+    document.getElementById('aud-tbody').innerHTML = r.items.length
+      ? r.items.map(a => `
+          <tr>
+            <td class="mono" style="color:var(--text-3)">#${a.id}</td>
+            <td class="mono">${escHtml(a.schema_name)}.${escHtml(a.table_name)}</td>
+            <td>${badge(a.operation)}</td>
+            <td class="mono" style="color:var(--text-2)">${a.record_id.slice(0, 8)}…</td>
+            <td>${a.user_id ? escHtml(empMap[a.user_id] || a.user_id.slice(0, 8)) : '–'}</td>
+            <td class="mono">${fmtD(a.performed_at)}</td>
+            <td><button class="btn btn-g btn-sm" onclick="showAuditDetail(${a.id})">Просмотр</button></td>
+          </tr>`).join('')
+      : '<tr><td colspan="7" class="empty">Записи не найдены</td></tr>';
+    renderPag('aud-pag', r.total, 20, pg, p => { PAGES.aud = p; loadAudit(); });
+  } catch (e) {
+    tb.innerHTML = `<tr><td colspan="7" style="color:var(--red);text-align:center;padding:20px">${escHtml(e.message)}</td></tr>`;
+  }
+}
+
+function showAuditDetail(id) {
+  const a = AUD_STORE[id];
+  if (!a) return;
+  const renderDiff = (old, nw) => {
+    if (!old && !nw) return '<p style="color:var(--text-3)">Нет данных</p>';
+    const src = nw || old || {};
+    return Object.entries(src).map(([k, v]) => {
+      const ov = old?.[k], nv = nw?.[k];
+      const changed = old && nw && String(ov) !== String(nv);
+      return `<div style="display:flex;gap:10px;padding:4px 0;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:10px;${changed?'background:rgba(255,184,0,.03)':''}">
+        <span style="color:var(--text-3);width:150px;flex-shrink:0">${escHtml(k)}</span>
+        ${old ? `<span style="color:var(--red);flex:1;overflow:hidden;text-overflow:ellipsis">${changed?escHtml(String(ov??'–')):''}</span>` : ''}
+        ${nw  ? `<span style="color:var(--green);flex:1;overflow:hidden;text-overflow:ellipsis">${escHtml(String(nv??'–'))}</span>` : ''}
+      </div>`;
+    }).join('');
+  };
+  document.getElementById('aud-detail').innerHTML = `
+    <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center">
+      ${badge(a.operation)}
+      <span class="mono">${escHtml(a.schema_name)}.${escHtml(a.table_name)}</span>
+      <span style="color:var(--text-3);font-family:var(--font-mono);font-size:10px">${fmtD(a.performed_at)}</span>
+    </div>
+    <div style="max-height:320px;overflow-y:auto">${renderDiff(a.old_data, a.new_data)}</div>`;
+  openOv('ov-aud');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EMPLOYEES
+// ═══════════════════════════════════════════════════════════════
+async function loadEmployees() {
+  const tb = document.getElementById('emp-tbody');
+  tb.innerHTML = '<tr><td colspan="6"><div class="empty"><div class="spin"></div></div></td></tr>';
+  try {
+    const [emps, depts] = await Promise.all([
+      api('/api/employees'),
+      api('/api/departments').catch(() => []),
+    ]);
+    const dm = Object.fromEntries(depts.map(d => [d.id, d.name]));
+    tb.innerHTML = emps.length
+      ? emps.map(e => `<tr>
+          <td><strong>${escHtml(e.full_name)}</strong></td>
+          <td>${badge(e.role)}</td>
+          <td class="mono">${escHtml(e.email)}</td>
+          <td>${e.department_id ? escHtml(dm[e.department_id]||'–') : '–'}</td>
+          <td>${e.is_active ? '<span class="b b-active">Активен</span>' : '<span class="b b-decommissioned">Неактивен</span>'}</td>
+          <td class="mono">${fmtD(e.created_at)}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="6" class="empty">Сотрудники не найдены</td></tr>';
+  } catch (e) {
+    tb.innerHTML = `<tr><td colspan="6" style="color:var(--red);text-align:center;padding:20px">${escHtml(e.message)}</td></tr>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ROLES MATRIX
+// ═══════════════════════════════════════════════════════════════
+const RES_LABELS = {
+  equipment:'Оборудование', telemetry:'Телеметрия', maintenance:'Обслуживание',
+  audit:'Аудит', employees:'Сотрудники', costs:'Финансы', locations:'Локации',
+};
+const ACT_LABELS = {
+  read:'Чтение', write:'Запись', update:'Обновление', move:'Перемещение', decommission:'Списание',
+};
+
+async function loadRoleMatrix() {
+  const tb = document.getElementById('role-tbody');
+  try {
+    const mx    = await api('/api/auth/permissions');
+    const roles = ['admin','engineer','storekeeper','auditor','viewer'];
+    const resources = [...new Set(Object.values(mx).flatMap(r => Object.keys(r)))];
+    tb.innerHTML = resources.map(res => `
+      <tr>
+        <td class="mono" style="color:var(--text-2)">${RES_LABELS[res] || res}</td>
+        ${roles.map(role => {
+          const ps = mx[role]?.[res] || [];
+          return `<td style="text-align:center">${ps.length
+            ? `<span style="color:var(--text-1);font-family:var(--font-mono);font-size:9px;line-height:1.7">${ps.map(a => ACT_LABELS[a]||a).join('<br>')}</span>`
+            : `<span style="color:var(--text-3)">—</span>`}</td>`;
+        }).join('')}
+      </tr>`).join('');
+  } catch (e) {
+    tb.innerHTML = `<tr><td colspan="6" style="color:var(--red);text-align:center;padding:20px">${e.message}</td></tr>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PAGINATION
+// ═══════════════════════════════════════════════════════════════
+function renderPag(containerId, total, perPage, current, onPage) {
+  const pages = Math.ceil(total / perPage);
+  const el    = document.getElementById(containerId);
+  if (!el) return;
+  if (pages <= 1) { el.innerHTML = `<span>${total} записей</span>`; return; }
+  const nums = [];
+  for (let i = Math.max(1, current - 2); i <= Math.min(pages, current + 2); i++) nums.push(i);
+  const cbName = `__pag_${containerId}`;
+  window[cbName] = onPage;
+  el.innerHTML = `
+    <span>${total} записей · стр. ${current} из ${pages}</span>
+    <div class="pbtns">
+      <button class="pbtn" ${current===1?'disabled':''} onclick="${cbName}(${current-1})">‹</button>
+      ${current > 3 ? `<button class="pbtn" onclick="${cbName}(1)">1</button><span style="color:var(--text-3)">…</span>` : ''}
+      ${nums.map(p => `<button class="pbtn${p===current?' act':''}" onclick="${cbName}(${p})">${p}</button>`).join('')}
+      ${current < pages-2 ? `<span style="color:var(--text-3)">…</span><button class="pbtn" onclick="${cbName}(${pages})">${pages}</button>` : ''}
+      <button class="pbtn" ${current===pages?'disabled':''} onclick="${cbName}(${current+1})">›</button>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════════════════════════════════
+function updateClock() {
+  const el = document.getElementById('tb-clock');
+  if (el) el.textContent = new Date().toLocaleString('ru-RU', {
+    day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit',
+  });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Chart defaults
+Chart.defaults.color       = '#5a82a0';
+Chart.defaults.font.family = 'Share Tech Mono';
+
+// ═══════════════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// THEME TOGGLE
+// ═══════════════════════════════════════════════════════════════
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('theme-light');
+  const icon  = document.getElementById('theme-icon');
+  const label = document.getElementById('theme-label');
+  if (isLight) {
+    if (icon)  icon.textContent  = '🌙';
+    if (label) label.textContent = 'ТЁМНАЯ';
+    localStorage.setItem('smo_theme', 'light');
+  } else {
+    if (icon)  icon.textContent  = '☀';
+    if (label) label.textContent = 'СВЕТЛАЯ';
+    localStorage.setItem('smo_theme', 'dark');
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  if (localStorage.getItem('smo_theme') === 'light') {
+    document.body.classList.add('theme-light');
+    const icon  = document.getElementById('theme-icon');
+    const label = document.getElementById('theme-label');
+    if (icon)  icon.textContent  = '🌙';
+    if (label) label.textContent = 'ТЁМНАЯ';
+  }
+  tryAutoLogin();
+});
+</script>
+</body>
+</html>
